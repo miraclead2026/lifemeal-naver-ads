@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라이프밀 · 네이버 광고 센터</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#fbfbfc; --border:#e7e9ee; --border-strong:#d7dae1;
+  --ink:#161a20; --ink-2:#4b525d; --ink-3:#868e9b; --accent:#0b8f6a; --accent-soft:#e6f5ef;
+  --good:#128a5b; --good-bg:#e5f4ec; --warn:#a5741a; --warn-bg:#faf1dd; --bad:#c0392b; --bad-bg:#fbeae7;
+  --idle:#7a828e; --idle-bg:#eef0f3;
+  --shadow:0 1px 2px rgba(16,20,30,.04),0 4px 16px rgba(16,20,30,.05);
+  --radius:14px; --mono:"SF Mono",ui-monospace,"Cascadia Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1013; --surface:#171a1f; --surface-2:#1c1f26; --border:#282c34; --border-strong:#343945;
+  --ink:#eef0f3; --ink-2:#b3b9c4; --ink-3:#7f8794; --accent:#2fd39a; --accent-soft:#12271f;
+  --good:#37c98b; --good-bg:#122a20; --warn:#e0b25a; --warn-bg:#2a2314; --bad:#ef7a6b; --bad-bg:#2c1815;
+  --idle:#8a92a0; --idle-bg:#20242b; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  line-height:1.55;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+a{color:inherit}
+
+/* ── top bar ── */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
+.bar{max-width:1180px;margin:0 auto;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;letter-spacing:-.02em}
+.brand .dot{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#1fbf87);
+  display:grid;place-items:center;color:#fff;font-size:12px;font-weight:900}
+.brand small{color:var(--ink-3);font-weight:600;font-size:12px}
+.bar-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.fresh{font-size:12px;color:var(--ink-3);font-weight:500}
+.fresh b{color:var(--ink-2);font-weight:700}
+.seg{display:inline-flex;background:var(--idle-bg);border:1px solid var(--border);border-radius:10px;padding:3px}
+.seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-weight:700;font-size:12.5px;
+  padding:5px 12px;border-radius:7px;cursor:pointer}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+nav.tabs{max-width:1180px;margin:0 auto;padding:0 12px;display:flex;gap:2px;overflow-x:auto}
+nav.tabs a{padding:11px 15px 13px;font-weight:700;font-size:14px;color:var(--ink-3);border-bottom:2px solid transparent;
+  white-space:nowrap;cursor:pointer;text-decoration:none;transition:color .12s}
+nav.tabs a:hover{color:var(--ink-2)}
+nav.tabs a.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* ── layout ── */
+main{max-width:1180px;margin:0 auto;padding:26px 22px 80px}
+.page{display:none;animation:fade .25s ease}
+.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.h1{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:3px}
+.sub{color:var(--ink-3);font-size:13.5px;margin-bottom:20px}
+.section-t{font-size:13px;font-weight:800;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;
+  margin:30px 0 12px;display:flex;align-items:center;gap:8px}
+.section-t .tag{font-size:11px;font-weight:700;color:var(--ink-3);background:var(--idle-bg);
+  border:1px solid var(--border);padding:2px 8px;border-radius:20px;text-transform:none;letter-spacing:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:820px){.g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}}
+
+/* ── KPI ── */
+.kpi{padding:18px 20px}
+.kpi .l{font-size:12.5px;color:var(--ink-3);font-weight:600;display:flex;align-items:center;gap:6px}
+.kpi .v{font-size:30px;font-weight:800;letter-spacing:-.03em;margin-top:7px;line-height:1.1}
+.kpi .v small{font-size:15px;font-weight:700;color:var(--ink-2)}
+.kpi .d{font-size:12px;color:var(--ink-3);margin-top:6px;font-weight:600}
+.kpi.accent{background:linear-gradient(160deg,var(--accent-soft),var(--surface))}
+
+/* ── pills ── */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:20px;
+  border:1px solid transparent;white-space:nowrap}
+.pill.good{color:var(--good);background:var(--good-bg)} .pill.warn{color:var(--warn);background:var(--warn-bg)}
+.pill.bad{color:var(--bad);background:var(--bad-bg)} .pill.idle{color:var(--idle);background:var(--idle-bg)}
+.pill.accent{color:var(--accent);background:var(--accent-soft)}
+.dotm{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* ── channel cards ── */
+.ch{padding:18px 20px;position:relative;overflow:hidden}
+.ch h3{font-size:14.5px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ch h3 .em{font-size:12px;color:var(--ink-3);font-weight:600}
+.ch .big{font-size:26px;font-weight:800;letter-spacing:-.03em;margin:12px 0 2px}
+.ch .row{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2);padding:5px 0;font-weight:600}
+.ch .row span:first-child{color:var(--ink-3);font-weight:600}
+.ch .bar-mini{height:6px;border-radius:4px;background:var(--idle-bg);margin-top:12px;overflow:hidden}
+.ch .bar-mini i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+
+/* ── table ── */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{text-align:left;font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.03em;
+  padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--ink-2);font-weight:500;vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.r,th.r{text-align:right}
+td.name{color:var(--ink);font-weight:700}
+.muted{color:var(--ink-3)}
+.tiny{font-size:12px;color:var(--ink-3);font-weight:500}
+
+/* ── 3-block ad tab ── */
+.block{padding:20px}
+.block h4{font-size:12px;font-weight:800;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px}
+.tl{position:relative;padding-left:20px}
+.tl:before{content:"";position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--border)}
+.tl .it{position:relative;padding:0 0 16px}
+.tl .it:last-child{padding-bottom:0}
+.tl .it:before{content:"";position:absolute;left:-18px;top:5px;width:9px;height:9px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--accent)}
+.tl .dt{font-size:11.5px;color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums}
+.tl .wt{font-size:14px;font-weight:700;color:var(--ink);margin:1px 0 2px}
+.tl .de{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.tl .cat{font-size:10.5px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.03em;margin-right:6px}
+
+.lever{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}
+.lever:last-child{border-bottom:0}
+.lever .k{font-weight:800;font-size:13px;color:var(--ink);min-width:112px;flex-shrink:0}
+.lever .v{font-size:13px;color:var(--ink-2);font-weight:500}
+
+.mission-goal{font-size:15px;font-weight:700;color:var(--ink);line-height:1.5}
+.mission-note{font-size:12.5px;color:var(--ink-3);margin-top:6px;padding:9px 12px;background:var(--surface-2);border-radius:9px;border:1px solid var(--border)}
+
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.stat-strip>div{background:var(--surface);padding:15px 16px}
+.stat-strip .l{font-size:12px;color:var(--ink-3);font-weight:600}
+.stat-strip .v{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-top:4px}
+@media(max-width:820px){.stat-strip{grid-template-columns:repeat(2,1fr)}}
+
+.rev-item{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:flex-start}
+.rev-item:last-child{border-bottom:0}
+.rev-item .kw{font-weight:800;color:var(--ink);font-size:14px}
+.rev-item .why{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+
+/* strategy / proposal cards */
+.strat{padding:16px 18px;border-left:3px solid var(--border-strong)}
+.strat.high{border-left-color:var(--bad)}.strat.medium{border-left-color:var(--warn)}.strat.low,.strat.info{border-left-color:var(--accent)}
+.strat .top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.strat .t{font-size:15px;font-weight:800;color:var(--ink)}
+.strat .action{font-size:14px;color:var(--ink);font-weight:600;margin:8px 0}
+.strat .meta{font-size:12.5px;color:var(--ink-2);line-height:1.55}
+.strat .meta b{color:var(--ink-3);font-weight:700}
+
+svg.spark{display:block;width:100%;height:44px;overflow:visible}
+
+.empty{padding:34px 20px;text-align:center;color:var(--ink-3);font-size:13.5px;font-weight:500}
+.err{color:var(--bad)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-3);font-weight:600;margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:12px;color:var(--ink-3);line-height:1.7}
+.foot code{font-family:var(--mono);font-size:11px;background:var(--surface-2);padding:1px 5px;border-radius:5px;border:1px solid var(--border)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <div class="brand"><span class="dot">L</span> 라이프밀 · 네이버 광고 센터 <small id="fresh-inline"></small></div>
+    <div class="bar-right">
+      <span class="fresh" id="fresh">데이터 불러오는 중…</span>
+      <div class="seg" id="win">
+        <button data-w="7" class="on">최근 7일</button>
+        <button data-w="28">28일</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tabs" id="tabs">
+    <a data-p="home" class="on">홈 · 리포트</a>
+    <a data-p="powerlink">파워링크</a>
+    <a data-p="shopping">쇼핑검색</a>
+    <a data-p="advoost">애드부스트</a>
+    <a data-p="strategy">세분화 전략</a>
+    <a data-p="weekly">주간보고</a>
+  </nav>
+</header>
+
+<main>
+  <section class="page on" id="p-home"></section>
+  <section class="page" id="p-powerlink"></section>
+  <section class="page" id="p-shopping"></section>
+  <section class="page" id="p-advoost"></section>
+  <section class="page" id="p-strategy"></section>
+  <section class="page" id="p-weekly"></section>
+
+  <div class="foot">
+    라이프밀 네이버 광고 전용 센터 · 데이터는 <code>miraclead2026/lifemeal-dashboard</code> 의 <code>data/*.json</code> 을 매일 자동 갱신분에서 읽습니다.
+    <br>ROAS 목표 기준선 330% · <b>효율</b> 색: <span class="pill good" style="padding:1px 7px"><span class="dotm"></span>효율</span> ≥330% ·
+    <span class="pill warn" style="padding:1px 7px"><span class="dotm"></span>관찰</span> 0~330% ·
+    <span class="pill bad" style="padding:1px 7px"><span class="dotm"></span>주의</span> 전환0·저효율 ·
+    <span class="pill idle" style="padding:1px 7px"><span class="dotm"></span>대기</span> 미집행
+  </div>
+</main>
+
+<script>
+const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals"];
+const D={}; let WIN=7;
+
+/* ---------- utils ---------- */
+const won=n=>n==null?"—":"₩"+Math.round(n).toLocaleString("ko-KR");
+const wonK=n=>{if(n==null)return"—";const a=Math.abs(n);if(a>=1e8)return"₩"+(n/1e8).toFixed(1)+"억";if(a>=1e4)return"₩"+Math.round(n/1e4).toLocaleString("ko-KR")+"만";return"₩"+Math.round(n).toLocaleString("ko-KR")};
+const numf=n=>n==null?"—":Math.round(n).toLocaleString("ko-KR");
+const roas=(rev,sp)=>sp>0?Math.round(rev/sp*100):null;
+const roasT=(rev,sp)=>{const r=roas(rev,sp);return r==null?"—":r+"%"};
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function effClass(rev,sp,conv){if(!sp||sp<=0)return"idle";if(conv===0)return"bad";const r=roas(rev,sp);if(r==null)return"idle";if(r>=330)return"good";if(r>0)return"warn";return"bad"}
+const effLabel={good:"효율",warn:"관찰",bad:"주의",idle:"대기"};
+function pill(cls,txt){return `<span class="pill ${cls}"><span class="dotm"></span>${txt}</span>`}
+function daysWindow(days,n){return [...(days||[])].sort((a,b)=>a.date<b.date?-1:1).slice(-n)}
+function fmtDate(s){if(!s)return"";const m=String(s).match(/(\d{4})-(\d{2})-(\d{2})/);return m?`${+m[2]}/${+m[3]}`:s}
+
+/* ---------- aggregation ---------- */
+function sumSummary(days){const t={spend:0,convRevenue:0,purchaseConv:0,totalConv:0,clicks:0,impressions:0};
+  days.forEach(d=>{const s=d.summary||{};for(const k in t)t[k]+=(s[k]||0)});return t}
+function groupsByChannel(days){const m={};
+  days.forEach(d=>(d.groups||[]).forEach(g=>{const c=g.channel||"?";(m[c]=m[c]||{spend:0,convRevenue:0,purchaseConv:0,totalConv:0,clicks:0,impressions:0});
+    ["spend","convRevenue","purchaseConv","totalConv","clicks","impressions"].forEach(k=>m[c][k]+=(g[k]||0))}));return m}
+function aggGroups(days){const m={};
+  days.forEach(d=>(d.groups||[]).forEach(g=>{const id=g.adGroupId||g.adGroupName;if(!m[id])m[id]={channel:g.channel,campaignName:g.campaignName,adGroupName:g.adGroupName,spend:0,convRevenue:0,purchaseConv:0,totalConv:0,clicks:0};
+    ["spend","convRevenue","purchaseConv","totalConv","clicks"].forEach(k=>m[id][k]+=(g[k]||0))}));return Object.values(m)}
+
+/* ---------- sparkline ---------- */
+function spark(vals,color){vals=vals.filter(v=>v!=null);if(vals.length<2)return"";
+  const w=260,h=44,mx=Math.max(...vals,1),mn=Math.min(...vals,0),rng=(mx-mn)||1;
+  const pts=vals.map((v,i)=>[i/(vals.length-1)*w,h-((v-mn)/rng)*(h-6)-3]);
+  const d=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area=d+` L ${w} ${h} L 0 ${h} Z`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <path d="${area}" fill="${color}" opacity=".08"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${pts.at(-1)[0].toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="3" fill="${color}"/></svg>`}
+
+/* ================= HOME ================= */
+function renderHome(){
+  const el=document.getElementById("p-home");
+  const na=D["naver-ads"];
+  if(!na||!na.days){el.innerHTML=empty("naver-ads.json 을 불러오지 못했습니다.");return}
+  const dw=daysWindow(na.days,WIN), t=sumSummary(dw), ch=groupsByChannel(dw);
+  const chMeta={display:{name:"애드부스트",em:"디스플레이"},search:{name:"쇼핑검색",em:"검색광고"}};
+  const pl=na.powerlink;
+
+  // KPI
+  let h=`<div class="h1">광고 리포트</div>
+    <div class="sub">지금 무슨 광고가 돌고 있고 무엇이 효율적인지 — 최근 ${WIN}일 통합 기준 ${dw.length?`(${fmtDate(dw[0].date)}~${fmtDate(dw.at(-1).date)})`:""}</div>
+    <div class="grid g4">
+      ${kpi("총 광고비",wonK(t.spend),`${dw.length}일 합계`,"accent")}
+      ${kpi("전환 매출",wonK(t.convRevenue),"구매 완료 기여")}
+      ${kpi("통합 ROAS",`${roasT(t.convRevenue,t.spend)}`,`목표 330% ${roas(t.convRevenue,t.spend)>=330?"달성":"미달"}`)}
+      ${kpi("전환 수",`${numf(t.purchaseConv)}<small> 건</small>`,`클릭 ${numf(t.clicks)} · 노출 ${numf(t.impressions)}`)}
+    </div>`;
+
+  // 채널 카드
+  h+=`<div class="section-t">채널별 현황 <span class="tag">애드부스트·쇼핑검색 = 최근 ${WIN}일 · 파워링크 = 28일</span></div><div class="grid g3">`;
+  ["display","search"].forEach(c=>{const g=ch[c];if(!g)return;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
+    h+=channelCard(chMeta[c].name,chMeta[c].em,g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1))});
+  if(pl&&pl.subLines){const ps=pl.subLines.reduce((a,s)=>({spend:a.spend+(s.spend28||0),rev:a.rev+(s.convRevenue28||0),conv:a.conv+(s.purchaseConv28||0),kw:a.kw+(s.keywordCount||0)}),{spend:0,rev:0,conv:0,kw:0});
+    const cls=effClass(ps.rev,ps.spend,ps.conv);
+    h+=channelCard("파워링크","검색광고 · 28일",ps.spend,ps.rev,ps.conv,cls,ps.spend/(t.spend||1),`키워드 ${numf(ps.kw)}개`)}
+  h+=`</div>`;
+
+  // 지금 돌아가는 광고
+  const rows=aggGroups(dw).filter(g=>g.spend>0).sort((a,b)=>b.spend-a.spend);
+  h+=`<div class="section-t">지금 돌아가는 광고 <span class="tag">${rows.length}개 그룹 · 지출순</span></div>
+    <div class="card"><table><thead><tr><th>채널</th><th>캠페인 / 광고그룹</th><th class="r">광고비</th><th class="r">전환</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
+  if(!rows.length)h+=`<tr><td colspan="6" class="empty">최근 ${WIN}일 집행된 그룹이 없습니다.</td></tr>`;
+  rows.slice(0,14).forEach(g=>{const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
+    h+=`<tr><td>${chBadge(g.channel)}</td>
+      <td><div class="name">${esc(g.adGroupName||"-")}</div><div class="tiny">${esc(g.campaignName||"")}</div></td>
+      <td class="r num">${won(g.spend)}</td><td class="r num">${numf(g.purchaseConv)}</td>
+      <td class="r num" style="font-weight:800;color:${cls==='good'?'var(--good)':cls==='warn'?'var(--warn)':cls==='bad'?'var(--bad)':'var(--ink-3)'}">${roasT(g.convRevenue,g.spend)}</td>
+      <td>${pill(cls,effLabel[cls])}</td></tr>`});
+  h+=`</tbody></table></div>`;
+
+  // 효율 하이라이트 + 오늘 한 일
+  const conv=rows.filter(g=>g.purchaseConv>0);
+  const best=[...conv].sort((a,b)=>roas(b.convRevenue,b.spend)-roas(a.convRevenue,a.spend)).slice(0,3);
+  const worst=[...rows].filter(g=>g.spend>=3000).sort((a,b)=>(roas(a.convRevenue,a.spend)||0)-(roas(b.convRevenue,b.spend)||0)).slice(0,3);
+  h+=`<div class="grid g2"><div>`;
+  h+=`<div class="section-t">잘 되는 광고</div><div class="card">${miniList(best,"good")}</div></div><div>`;
+  h+=`<div class="section-t">주의 필요</div><div class="card">${miniList(worst,"bad")}</div></div></div>`;
+
+  // 각 영역 오늘 활동
+  h+=`<div class="section-t">각 영역 최근 활동</div><div class="grid g2">`;
+  h+=agentTeaser("파워링크",D["powerlink-agent"]);
+  h+=agentTeaser("애드부스트",D["advoost-agent"]);
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+function kpi(l,v,d,extra=""){return `<div class="card kpi ${extra}"><div class="l">${l}</div><div class="v num">${v}</div><div class="d">${d}</div></div>`}
+function channelCard(name,em,sp,rev,conv,cls,share,extra=""){
+  return `<div class="card ch"><h3>${esc(name)} ${pill(cls,effLabel[cls])}</h3>
+    <div class="big num">${roasT(rev,sp)}</div><div class="tiny">ROAS · ${esc(em)}</div>
+    <div class="row"><span>광고비</span><span class="num">${won(sp)}</span></div>
+    <div class="row"><span>전환매출</span><span class="num">${won(rev)}</span></div>
+    <div class="row"><span>전환수${extra?" · "+extra:""}</span><span class="num">${numf(conv)}건</span></div>
+    <div class="bar-mini"><i style="width:${Math.min(100,share*100).toFixed(0)}%"></i></div>
+    <div class="tiny" style="margin-top:5px">광고비 비중 ${(share*100).toFixed(0)}%</div></div>`}
+function chBadge(c){const m={display:["애드부스트","accent"],search:["쇼핑검색","accent"]};const x=m[c]||[c,"idle"];return pill(x[1],x[0])}
+function miniList(rows,cls){if(!rows||!rows.length)return`<div class="empty">해당 없음</div>`;
+  return rows.map(g=>`<div class="rev-item"><div style="flex:1"><div class="kw">${esc(g.adGroupName||"-")}</div>
+    <div class="tiny">${esc(g.campaignName||"")} · 광고비 ${won(g.spend)}</div></div>
+    <div class="num" style="font-weight:800;font-size:15px;color:var(--${cls})">${roasT(g.convRevenue,g.spend)}</div></div>`).join("")}
+function agentTeaser(name,a){if(!a||!a.timeline||!a.timeline.length)return `<div class="card block"><h4>${name}</h4><div class="tiny">데이터 대기</div></div>`;
+  const it=a.timeline[0];
+  return `<div class="card block"><h4>${name} · 최근 활동</h4>
+    <div class="tl"><div class="it"><div class="dt">${fmtDate(it.date)}</div><div class="wt">${esc(it.what||it.category)}</div><div class="de">${esc(it.detail||"")}</div></div></div>
+    <div class="tiny" style="margin-top:10px">→ 상단 <b>${name}</b> 탭에서 전체 보기</div></div>`}
+
+/* ================= POWERLINK ================= */
+function renderPowerlink(){
+  const el=document.getElementById("p-powerlink");
+  const a=D["powerlink-agent"], rej=D["keyword-rejections"], bl=D["bid-log"], ka=D["keyword-additions"], na=D["naver-ads"];
+  let h=`<div class="h1">파워링크 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">검색광고 · 키워드</span></div>
+    <div class="sub">지금 상황 · 한 일 · 할 일 — 매일 자동 갱신</div>`;
+
+  // 지금 상황
+  const kwCount=na&&na.powerlink&&na.powerlink.subLines?na.powerlink.subLines.reduce((s,x)=>s+(x.keywordCount||0),0):null;
+  const blToday=bl&&bl.days&&bl.days.length?bl.days.at(-1):null;
+  const bidChanged=blToday?(blToday.summary&&blToday.summary.changed||0):null;
+  const rejSum=rej&&rej.summary?rej.summary:null;
+  h+=`<div class="section-t">지금 상황</div><div class="stat-strip">
+    <div><div class="l">등록 키워드</div><div class="v num">${kwCount==null?"—":numf(kwCount)}</div></div>
+    <div><div class="l">최근 입찰조정</div><div class="v num">${bidChanged==null?"—":bidChanged+"키"}</div></div>
+    <div><div class="l">반려 · 수동검토</div><div class="v num">${rejSum?rejSum.total+" · "+rejSum.manualReview:"—"}</div></div>
+    <div><div class="l">자동 제외 누적</div><div class="v num">${rejSum?rejSum.autoExcluded:"—"}</div></div></div>`;
+
+  // 반려 수동검토
+  if(rej&&rej.manualReview){
+    h+=`<div class="section-t">반려 수동검토 <span class="tag">주제는 맞으나 네이버 반려 — 사람 확인</span></div><div class="card">`;
+    if(!rej.manualReview.length)h+=`<div class="empty">수동검토 대기 없음</div>`;
+    else rej.manualReview.forEach(r=>{h+=`<div class="rev-item"><div style="flex:1"><span class="kw">${esc(r.keyword)}</span>
+      <span class="pill idle" style="margin-left:8px">${esc(r.group)}</span><div class="why">${esc(r.reason)}</div></div>
+      <div class="tiny num">입찰 ₩${numf(r.bidAmt)}<br>${fmtDate(r.detectedAt)}</div></div>`});
+    h+=`</div>`;
+  }
+
+  // 할 일 (미션) + 한 일 (타임라인)
+  h+=`<div class="grid g2">`;
+  h+=`<div><div class="section-t">할 일 · 미션</div><div class="card block">`;
+  if(a&&a.mission){const m=a.mission;
+    h+=`<div class="mission-goal">${esc(m.goal)}</div>`;
+    if(m.goalNote)h+=`<div class="mission-note">${esc(m.goalNote)}</div>`;
+    h+=`<div style="margin-top:16px">`;(m.how||[]).forEach(l=>h+=`<div class="lever"><div class="k">${esc(l.lever)}</div><div class="v">${esc(l.desc)}</div></div>`);h+=`</div>`;
+    if(m.targets)h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">`+m.targets.map(t=>`<span class="pill accent">${esc(t.label)} ${esc(t.value)}</span>`).join("")+`</div>`;
+  }else h+=`<div class="tiny">데이터 대기</div>`;
+  h+=`</div></div>`;
+
+  h+=`<div><div class="section-t">한 일 · 타임라인</div><div class="card block"><div class="tl">`;
+  if(a&&a.timeline&&a.timeline.length)a.timeline.slice(0,12).forEach(it=>{
+    h+=`<div class="it"><div class="dt">${fmtDate(it.date)}</div><div class="wt"><span class="cat">${esc(it.category||"")}</span>${esc(it.what||"")}</div>${it.detail?`<div class="de">${esc(it.detail)}</div>`:""}</div>`});
+  else h+=`<div class="tiny">데이터 대기</div>`;
+  h+=`</div></div></div></div>`;
+  el.innerHTML=h;
+}
+
+/* ================= SHOPPING ================= */
+function renderShopping(){
+  const el=document.getElementById("p-shopping");
+  const na=D["naver-ads"], sp=D["shopping-proposals"];
+  const dw=na&&na.days?daysWindow(na.days,WIN):[];
+  const ch=groupsByChannel(dw).search;
+  let h=`<div class="h1">쇼핑검색 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">검색광고 · 상품</span></div>
+    <div class="sub">지금 상황 · 할 일 — 최근 ${WIN}일 기준</div>`;
+  h+=`<div class="section-t">지금 상황</div>`;
+  if(ch){const cls=effClass(ch.convRevenue,ch.spend,ch.purchaseConv);
+    h+=`<div class="grid g4">
+      ${kpi("광고비",wonK(ch.spend),`${WIN}일`,"accent")}
+      ${kpi("전환매출",wonK(ch.convRevenue),"구매 기여")}
+      ${kpi("ROAS",roasT(ch.convRevenue,ch.spend),effLabel[cls])}
+      ${kpi("전환수",numf(ch.purchaseConv)+"건",`클릭 ${numf(ch.clicks)}`)}</div>`;
+  }else h+=empty("쇼핑검색 집행 데이터가 없습니다.");
+  // 상품 성과
+  const prod={};dw.forEach(d=>(d.products||[]).filter(p=>p.channel==="search").forEach(p=>{const id=p.groupName||p.name;if(!prod[id])prod[id]={name:p.groupName||p.name,spend:0,convRevenue:0,purchaseConv:0};["spend","convRevenue","purchaseConv"].forEach(k=>prod[id][k]+=(p[k]||0))}));
+  const prows=Object.values(prod).filter(p=>p.spend>0).sort((a,b)=>b.spend-a.spend);
+  if(prows.length){h+=`<div class="section-t">상품군별 성과 <span class="tag">${prows.length}개</span></div><div class="card"><table>
+    <thead><tr><th>상품군</th><th class="r">광고비</th><th class="r">전환</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
+    prows.slice(0,15).forEach(p=>{const cls=effClass(p.convRevenue,p.spend,p.purchaseConv);
+      h+=`<tr><td class="name">${esc(p.name)}</td><td class="r num">${won(p.spend)}</td><td class="r num">${numf(p.purchaseConv)}</td>
+      <td class="r num" style="font-weight:800;color:var(--${cls==='idle'?'ink-3':cls})">${roasT(p.convRevenue,p.spend)}</td><td>${pill(cls,effLabel[cls])}</td></tr>`});
+    h+=`</tbody></table></div>`}
+  // 최적화 카드
+  h+=`<div class="section-t">할 일 · 최적화 제안</div>`;
+  if(sp&&sp.cards&&sp.cards.length){h+=`<div class="grid g2">`;
+    sp.cards.forEach(c=>{h+=`<div class="card strat ${esc(c.severity)}"><div class="top">
+      <span class="t">${esc(c.title)}</span>${pill(c.severity==="high"?"bad":c.severity==="medium"?"warn":"accent",esc(c.status||c.type))}</div>
+      <div class="action">${esc(c.action)}</div><div class="meta"><b>이유</b> ${esc(c.reason||"")}</div>
+      ${c.nextStep?`<div class="meta" style="margin-top:6px"><b>다음</b> ${esc(c.nextStep)}</div>`:""}</div>`});
+    h+=`</div>`}
+  else h+=`<div class="card"><div class="empty">최적화 제안 대기</div></div>`;
+  el.innerHTML=h;
+}
+
+/* ================= ADVOOST ================= */
+function renderAdvoost(){
+  const el=document.getElementById("p-advoost");
+  const a=D["advoost-agent"];
+  if(!a){el.innerHTML=empty("advoost-agent.json 을 불러오지 못했습니다.");return}
+  let h=`<div class="h1">애드부스트 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">디스플레이 · GFA 자동광고</span></div>
+    <div class="sub">지금 상황 · 한 일 · 할 일 — 매일 자동 갱신</div>`;
+  // 지금 상황 + 추이
+  if(a.performance){const p=a.performance,l=p.latest||{};
+    h+=`<div class="section-t">지금 상황 <span class="tag">최근 확정 ${fmtDate(l.date)}</span></div><div class="grid g4">
+      ${kpi("광고비",wonK(l.spend),"일 기준","accent")}
+      ${kpi("구매매출",wonK(l.purchaseSales),"실구매 기여")}
+      ${kpi("실구매 ROAS",(l.purchaseRoas!=null?l.purchaseRoas+"%":"—"),l.purchaseRoas>=330?"목표 달성":"목표 미달")}
+      ${kpi("14일 추이","",`평균 ${p.trend14d&&p.trend14d.length?Math.round(p.trend14d.reduce((s,x)=>s+(x.purchaseRoas||0),0)/p.trend14d.length)+"%":"—"}`)}</div>`;
+    if(p.trend14d&&p.trend14d.length)h+=`<div class="card" style="padding:16px 18px;margin-top:14px"><div class="tiny" style="margin-bottom:6px">실구매 ROAS 14일 추이</div>${spark(p.trend14d.map(x=>x.purchaseRoas),"var(--accent)")}</div>`;
+  }
+  // 할 일: 문제 + 계획
+  h+=`<div class="grid g2"><div><div class="section-t">문제점</div><div class="card block">`;
+  (a.problems||[]).forEach(p=>h+=`<div class="lever"><div class="k">${esc(p.title)}</div><div class="v">${esc(p.detail)} ${p.status?pill("idle",esc(p.status)):""}</div></div>`);
+  if(!a.problems||!a.problems.length)h+=`<div class="tiny">없음</div>`;
+  h+=`</div></div><div><div class="section-t">계획</div><div class="card block">`;
+  (a.plan||[]).forEach(p=>h+=`<div class="lever"><div class="k">${p.step?"STEP "+p.step:""}</div><div class="v"><b>${esc(p.title)}</b> ${p.status?pill(p.status.includes("완")||p.status.includes("진행")?"good":"idle",esc(p.status)):""}<br><span class="tiny">${esc((p.actions||[]).join(" · "))}</span></div></div>`);
+  h+=`</div></div></div>`;
+  // 한 일
+  h+=`<div class="section-t">한 일 · 타임라인</div><div class="card block"><div class="tl">`;
+  if(a.timeline&&a.timeline.length)a.timeline.slice(0,10).forEach(it=>h+=`<div class="it"><div class="dt">${fmtDate(it.date)}</div><div class="wt"><span class="cat">${esc(it.category||"")}</span>${esc(it.what||"")}</div>${it.detail?`<div class="de">${esc(it.detail)}</div>`:""}</div>`);
+  else h+=`<div class="tiny">데이터 대기</div>`;
+  h+=`</div></div>`;
+  // 유니 확인
+  if(a.todoForUni&&a.todoForUni.length){h+=`<div class="section-t">사람 확인 필요</div><div class="card"><table><thead><tr><th>#</th><th>항목</th><th>화면</th><th>할 일</th><th>상태</th></tr></thead><tbody>`;
+    a.todoForUni.forEach(t=>h+=`<tr><td class="num">${t.no}</td><td class="name">${esc(t.title)}</td><td class="tiny">${esc(t.screen||"")}</td><td class="tiny">${esc(t.do||"")}</td><td>${pill("idle",esc(t.status||"대기"))}</td></tr>`);
+    h+=`</tbody></table></div>`}
+  el.innerHTML=h;
+}
+
+/* ================= STRATEGY ================= */
+function renderStrategy(){
+  const el=document.getElementById("p-strategy");
+  const s=D["ads-strategy"];
+  let h=`<div class="h1">세분화 전략</div><div class="sub">채널·상품군별 실행 카드 — 한 줄 액션 + 한 줄 이유 · 매일 재생성</div>`;
+  if(!s||!s.items||!s.items.length){el.innerHTML=h+empty("전략 카드 대기");return}
+  const order={high:0,medium:1,low:2,info:3};
+  const items=[...s.items].sort((a,b)=>(order[a.severity]??9)-(order[b.severity]??9));
+  h+=`<div class="grid g2">`;
+  items.forEach(c=>{const sc=c.severity==="high"?"bad":c.severity==="medium"?"warn":"accent";
+    h+=`<div class="card strat ${esc(c.severity)}"><div class="top">
+      <span class="t">${esc(c.target||c.groupId||"")}</span>${pill(sc,esc(c.severity||""))}</div>
+      <div class="action">${esc(c.action)}</div>
+      ${c.insight?`<div class="meta"><b>진단</b> ${esc(c.insight)}</div>`:""}
+      ${c.evidence?`<div class="meta" style="margin-top:5px"><b>근거</b> ${esc(c.evidence)}</div>`:""}
+      ${c.successMetric?`<div class="meta" style="margin-top:5px"><b>성공기준</b> ${esc(c.successMetric)}</div>`:""}</div>`});
+  h+=`</div>`;el.innerHTML=h;
+}
+
+/* ================= WEEKLY ================= */
+function renderWeekly(){
+  const el=document.getElementById("p-weekly");
+  const w=D["naver-ads-weekly"];
+  if(!w){el.innerHTML=empty("naver-ads-weekly.json 대기");return}
+  let h=`<div class="h1">주간보고</div><div class="sub">${esc(w.period||"")}</div>`;
+  if(w.headline)h+=`<div class="card kpi accent" style="margin-bottom:14px"><div class="l">이번 주 한마디</div><div style="font-size:17px;font-weight:800;margin-top:6px;line-height:1.5">${esc(w.headline)}</div></div>`;
+  if(w.stats&&w.stats.length){h+=`<div class="grid g4">`;w.stats.forEach(s=>h+=kpi(esc(s.label),esc(s.value),""));h+=`</div>`}
+  if(w.highlights&&w.highlights.length){h+=`<div class="section-t">한 일 · 만든 것</div><div class="card block">`;
+    w.highlights.forEach(x=>h+=`<div class="lever"><div class="k">${x.tag?`<span class="pill accent">${esc(x.tag)}</span>`:""}</div><div class="v"><b>${esc(x.key)}</b>${x.detail?`<br><span class="tiny">${esc(x.detail)}</span>`:""}</div></div>`);
+    h+=`</div>`}
+  if(w.next&&w.next.length){h+=`<div class="section-t">다음</div><div class="card block">`;
+    w.next.forEach(x=>h+=`<div class="lever"><div class="k">${x.tag?`<span class="pill idle">${esc(x.tag)}</span>`:""}</div><div class="v"><b>${esc(x.key)}</b>${x.detail?`<br><span class="tiny">${esc(x.detail)}</span>`:""}</div></div>`);
+    h+=`</div>`}
+  if(w.note)h+=`<div class="tiny" style="margin-top:14px">${esc(w.note)}</div>`;
+  el.innerHTML=h;
+}
+
+function empty(msg){return `<div class="card"><div class="empty ${msg.includes('못')?'err':''}">${esc(msg)}</div></div>`}
+
+/* ---------- boot ---------- */
+function renderAll(){renderHome();renderPowerlink();renderShopping();renderAdvoost();renderStrategy();renderWeekly();
+  const stamps=FEEDS.map(f=>D[f]&&D[f].updatedAt).filter(Boolean).sort();
+  const latest=stamps.at(-1);
+  document.getElementById("fresh").innerHTML=latest?`데이터 기준 <b>${esc(latest)}</b>`:`<span class="err">데이터 로드 실패</span>`;
+}
+async function load(){
+  await Promise.all(FEEDS.map(async f=>{try{const r=await fetch(BASE+f+".json",{cache:"no-store"});if(r.ok)D[f]=await r.json()}catch(e){}}));
+  renderAll();
+}
+// tabs
+document.getElementById("tabs").addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;
+  const p=a.dataset.p;document.querySelectorAll("nav.tabs a").forEach(x=>x.classList.toggle("on",x===a));
+  document.querySelectorAll(".page").forEach(s=>s.classList.toggle("on",s.id==="p-"+p));
+  history.replaceState(null,"","#"+p);window.scrollTo(0,0)});
+// window toggle
+document.getElementById("win").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  WIN=+b.dataset.w;document.querySelectorAll("#win button").forEach(x=>x.classList.toggle("on",x===b));renderAll()});
+// deep link
+const hash=location.hash.replace("#","");
+if(hash&&document.getElementById("p-"+hash)){document.querySelectorAll("nav.tabs a").forEach(x=>x.classList.toggle("on",x.dataset.p===hash));
+  document.querySelectorAll(".page").forEach(s=>s.classList.toggle("on",s.id==="p-"+hash))}
+load();
+</script>
+</body>
+</html>
