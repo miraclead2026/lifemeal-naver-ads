@@ -212,6 +212,19 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 .chips{display:flex;gap:7px;flex-wrap:wrap}
 .kwchip{font-size:12px;font-weight:600;padding:5px 9px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--ink-2)}
 .kwchip.exc{border-color:var(--idle);color:var(--idle);background:var(--idle-bg)}
+/* ── 일일 브리핑 ── */
+.brief{background:linear-gradient(155deg,var(--accent-soft),var(--surface));border:1px solid var(--accent);border-radius:16px;padding:20px 22px;margin-bottom:22px;box-shadow:var(--shadow)}
+.brief .bh{display:flex;align-items:center;gap:11px}
+.brief .av{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#1fbf87);display:grid;place-items:center;color:#fff;font-weight:900;font-size:13px;flex-shrink:0}
+.brief .bt{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.brief .bd{font-size:12px;color:var(--ink-3);font-weight:600}
+.brief .greet{font-size:14px;color:var(--ink);margin:12px 0 2px;font-weight:600;line-height:1.5}
+.brief .grp{margin-top:15px}
+.brief .grp h5{font-size:11.5px;font-weight:800;color:var(--accent);letter-spacing:.03em;margin-bottom:8px}
+.brief .row2{display:flex;gap:9px;padding:5px 0;font-size:13.5px;color:var(--ink);line-height:1.6}
+.brief .row2 .ic2{flex-shrink:0}
+.brief .qbox{background:var(--warn-bg);border:1px solid var(--warn);border-radius:11px;padding:11px 14px;margin-top:7px;font-size:13.5px;color:var(--ink);font-weight:600;line-height:1.55;display:flex;gap:9px}
+.brief b{font-weight:800}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -264,7 +277,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing"];
 const D={}; let WIN=7;
 
 /* ---------- utils ---------- */
@@ -399,7 +412,24 @@ function renderPowerlink(){
   const el=document.getElementById("p-powerlink");
   const a=D["powerlink-agent"], rej=D["keyword-rejections"], bl=D["bid-log"], ka=D["keyword-additions"], na=D["naver-ads"];
   let h=`<div class="h1">파워링크 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">검색광고 · 키워드</span></div>
-    <div class="sub">지금 상황 · 한 일 · 할 일 — 매일 자동 갱신</div>`;
+    <div class="sub">네이버 검색 결과 맨 위 광고 자리를, 우리 제품 키워드로 사는 광고</div>`;
+  h+=`<div class="card block" style="margin-bottom:6px">
+    <div style="font-size:14px;font-weight:700;color:var(--ink);line-height:1.6">
+      <b>이게 뭐예요?</b> 네이버에 예를 들어 '단백질쉐이크'를 검색하면 맨 위에 뜨는 텍스트 광고 — 그 자리를 우리 제품 키워드로 삽니다. 클릭당 과금(입찰가로 순위 결정).
+    </div>
+    <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div><h4 style="color:var(--good)">✅ 제가 매일 자동으로 하는 것</h4>
+        <div class="tiny" style="line-height:1.7;color:var(--ink-2);font-weight:500">
+        · 검색량은 있는데 <b>노출을 못 잡는 키워드의 입찰을 올려</b> 광고 자리에 들어가게 함<br>
+        · 너무 비싸게 사는 키워드는 <b>입찰을 내려</b> 낭비 제거<br>
+        · 트렌드에서 뜬 <b>새 키워드를 판단해 추가</b><br>
+        · 네이버가 <b>반려한 키워드 정리</b>(경쟁사·남의 브랜드 자동 제외)</div></div>
+      <div><h4 style="color:var(--warn)">🙋 사람(현수님)이 정해야 하는 것</h4>
+        <div class="tiny" style="line-height:1.7;color:var(--ink-2);font-weight:500">
+        · <b>키워드 삭제</b> — 저는 삭제검토 표시만, 실제 삭제는 사람<br>
+        · <b>반려 수동검토</b> — 주제는 맞는데 막힌 키워드를 살릴지<br>
+        · <b>전환추적 활성화</b> 후 목표 ROAS 판단 전환</div></div>
+    </div></div>`;
 
   // 지금 상황
   const kwCount=na&&na.powerlink&&na.powerlink.subLines?na.powerlink.subLines.reduce((s,x)=>s+(x.keywordCount||0),0):null;
@@ -516,20 +546,16 @@ function renderAdvoost(){
 /* ================= STRATEGY ================= */
 function renderStrategy(){
   const el=document.getElementById("p-strategy");
-  const s=D["ads-strategy"];
-  let h=`<div class="h1">세분화 전략</div><div class="sub">채널·상품군별 실행 카드 — 한 줄 액션 + 한 줄 이유 · 매일 재생성</div>`;
-  if(!s||!s.items||!s.items.length){el.innerHTML=h+empty("전략 카드 대기");return}
-  const order={high:0,medium:1,low:2,info:3};
-  const items=[...s.items].sort((a,b)=>(order[a.severity]??9)-(order[b.severity]??9));
-  h+=`<div class="grid g2">`;
-  items.forEach(c=>{const sc=c.severity==="high"?"bad":c.severity==="medium"?"warn":"accent";
-    h+=`<div class="card strat ${esc(c.severity)}"><div class="top">
-      <span class="t">${esc(c.target||c.groupId||"")}</span>${pill(sc,esc(c.severity||""))}</div>
-      <div class="action">${esc(c.action)}</div>
-      ${c.insight?`<div class="meta"><b>진단</b> ${esc(c.insight)}</div>`:""}
-      ${c.evidence?`<div class="meta" style="margin-top:5px"><b>근거</b> ${esc(c.evidence)}</div>`:""}
-      ${c.successMetric?`<div class="meta" style="margin-top:5px"><b>성공기준</b> ${esc(c.successMetric)}</div>`:""}</div>`});
-  h+=`</div>`;el.innerHTML=h;
+  el.innerHTML=`<div class="h1">세분화 전략 <span class="wip">재정비 중</span></div>
+    <div class="sub">이전 전략 카드는 광고 지식 없이 자동 생성돼 실제로 쓰기 어려웠습니다 — 전부 내렸습니다.</div>
+    <div class="wip-banner"><span>🛠️</span><div><b>다시 만드는 중</b> — "성과 나쁜 옵션 1개를 끄세요" 같은 모호한 카드 대신, <b>상품별 성과(상품·세분화 탭)</b>를 바탕으로 "이 상품은 지금 이래서 이렇게 하자"를 쉬운 말로 다시 설계합니다.</div></div>
+    <div class="card block"><div class="tiny" style="line-height:1.75;color:var(--ink-2);font-weight:500;font-size:13px">
+      새 세분화 전략은 이렇게 갈 예정이에요:<br>
+      · <b>상품별로</b> — 지금 ROAS·전환이 어떤지 → 늘릴지 / 줄일지 / 점검할지 한 줄 결론<br>
+      · <b>채널별로</b> — 이 상품은 검색이 나은지, 디스플레이가 나은지<br>
+      · <b>왜 그렇게 하는지</b>를 광고 용어 없이 설명<br>
+      방향이 잡히면 여기 채웁니다.
+    </div></div>`;
 }
 
 /* ================= WEEKLY ================= */
@@ -574,9 +600,20 @@ function genInsights(days,channel){
   return out}
 function insSection(title,arr){return `<div class="section-t">${title}</div><div class="card">`+
   arr.map(i=>`<div class="insight ${i.level}"><span class="ic"></span><div><div class="tx">${i.text}</div>${i.mt?`<div class="mt">${i.mt}</div>`:""}</div></div>`).join("")+`</div>`}
+function mdb(s){return esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>")}
+function briefGroup(title,arr,useIcon){if(!arr||!arr.length)return"";
+  return `<div class="grp"><h5>${title}</h5>`+arr.map(x=>`<div class="row2"><span class="ic2">${useIcon&&x.icon?x.icon:"·"}</span><div>${mdb(x.text||x)}</div></div>`).join("")+`</div>`}
+function briefingHTML(){const br=D["ads-briefing"];if(!br)return"";
+  let h=`<div class="brief"><div class="bh"><div class="av">AI</div><div><div class="bt">현수님께 · 오늘의 보고</div><div class="bd">${esc(br.updatedAt||"")} · 광고 AI 에이전트</div></div></div>`;
+  if(br.greeting)h+=`<div class="greet">${mdb(br.greeting)}</div>`;
+  h+=briefGroup("🗂 어제 한 일",br.yesterday,true);
+  h+=briefGroup("👀 지금 보고 있는 것",br.observing);
+  h+=briefGroup("➡️ 다음에 하려는 것",br.proposals);
+  if(br.questions&&br.questions.length)h+=`<div class="grp"><h5>❓ 확인 부탁드려요</h5>`+br.questions.map(q=>`<div class="qbox"><span>❓</span><div>${mdb(q.text||q)}</div></div>`).join("")+`</div>`;
+  return h+`</div>`}
 function renderReport(){
   const el=document.getElementById("p-report"), na=D["naver-ads"];
-  if(!na||!na.days){el.innerHTML=`<div class="h1">일일 리포트</div>`+empty("naver-ads.json 을 불러오지 못했습니다.");return}
+  if(!na||!na.days){el.innerHTML=`<div class="h1">일일 리포트</div>`+briefingHTML()+empty("naver-ads.json 을 불러오지 못했습니다.");return}
   const s=[...na.days].sort(byDate), l7=s.slice(-7);
   const conf=s.filter(d=>!d.provisional).map(d=>d.date).sort().at(-1);
   const prov=s.filter(d=>d.provisional).map(d=>d.date).sort().at(-1);
@@ -589,7 +626,8 @@ function renderReport(){
       <div class="rep-row"><span>최근 7일 전환</span><span class="num">${numf(t.purchaseConv)}건 · 노출 ${numf(t.impressions)}</span></div>
       <div class="tiny" style="margin-top:9px">${note}</div></div>`}
   let h=`<div class="h1">일일 리포트</div>
-    <div class="sub">네이버에서 매일 받아오는 검색·디스플레이 광고 보고서의 수집 현황과 주요 인사이트 — D-2 확정 기준</div>`;
+    <div class="sub">매일 제가 한 일 보고 + 검색·디스플레이 보고서 수집 현황과 주요 인사이트 — D-2 확정 기준</div>`;
+  h+=briefingHTML();
   h+=`<div class="section-t">리포트 수집 현황 <span class="tag">데이터 기준 ${esc(na.updatedAt||"")}</span></div><div class="grid g2">`
     +repCard("검색광고 보고서","search","네이버 검색광고 공식 API(/stats) · 쇼핑검색 기준 · 브랜드검색(정액제) 제외 · 파워링크는 파워링크 탭")
     +repCard("디스플레이광고 보고서","display","광고주센터 성과 보고서(reportPerformance) · 애드부스트 · 48시간 소급 반영 후 D-2 확정")
@@ -635,10 +673,7 @@ function renderProducts(){
   h+=`<div class="section-t">성별 · 연령 · 기기 <span class="wip">승인 전 · 데이터 연동 예정</span></div>
     <div class="card block"><div class="demo">${demoBlock("성별",[["여",62],["남",38]])}${demoBlock("연령",[["20대",18],["30대",34],["40대",29],["50+",19]])}${demoBlock("기기",[["모바일",81],["PC",19]])}</div>
     <div class="tiny" style="margin-top:12px">※ 예시 수치. 승인 시 데이터랩·광고 stats에서 상품×세그먼트 실데이터를 연동합니다.</div></div>`;
-  if(st&&st.items&&st.items.length){h+=`<div class="section-t">도출된 세분화 전략 <span class="tag">재료 → 결론</span></div><div class="grid g2">`;
-    st.items.slice(0,4).forEach(c=>{const sc=c.severity==="high"?"bad":c.severity==="medium"?"warn":"accent";
-      h+=`<div class="card strat ${esc(c.severity)}"><div class="top"><span class="t">${esc(c.target||c.groupId||"")}</span>${pill(sc,esc(c.severity||""))}</div><div class="action">${esc(c.action)}</div></div>`});
-    h+=`</div><div class="tiny" style="margin-top:8px">전체는 「세분화 전략」 탭 참조</div>`}
+  h+=`<div class="section-t">세분화 전략</div><div class="card block"><div class="tiny" style="color:var(--ink-2);font-weight:500;line-height:1.7;font-size:13px">이전 자동 생성 전략 카드는 광고 지식 없이 나와서 <b>전부 내렸습니다.</b> 위 상품별 성과를 바탕으로 "이 상품은 이래서 이렇게 하자"를 쉬운 말로 다시 만드는 중이에요(「세분화 전략」 탭 참조).</div></div>`;
   el.innerHTML=h}
 
 function serp(mobile){return `<div class="serp"><div class="q"><span>라이프밀</span><span>🔍</span></div>
