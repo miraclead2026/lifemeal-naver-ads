@@ -232,7 +232,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
     <a data-p="report">일일 리포트</a>
     <a data-p="powerlink">파워링크</a>
     <a data-p="shopping">쇼핑검색</a>
-    <a data-p="branded">브랜드검색 <span class="wip">승인전</span></a>
+    <a data-p="branded">브랜드검색</a>
     <a data-p="advoost">애드부스트</a>
     <a data-p="products">상품·세분화 <span class="wip">승인전</span></a>
     <a data-p="dict">키워드 사전 <span class="wip">승인전</span></a>
@@ -264,7 +264,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search"];
 const D={}; let WIN=7;
 
 /* ---------- utils ---------- */
@@ -647,12 +647,30 @@ function serp(mobile){return `<div class="serp"><div class="q"><span>라이프�
   <div class="links"><span>1일1생식</span><span>닥터샐러드</span><span>프로틴골드</span>${mobile?"":"<span>이너뷰티젤리</span>"}</div>
   <div class="thumbs"><i></i><i></i><i></i>${mobile?"":"<i></i>"}</div></div></div>`}
 function renderBranded(){
-  const el=document.getElementById("p-branded"),dict=D["keyword-dictionary-ads"];
+  const el=document.getElementById("p-branded"),dict=D["keyword-dictionary-ads"],bs=D["brand-search"];
   const bkw=((dict&&dict.keywords)||[]).filter(k=>k.type==="브랜드검색");
-  let h=`<div class="h1">브랜드검색 <span class="wip">승인 전</span></div><div class="sub">네이버에 '라이프밀' 검색 시 노출되는 브랜드검색광고 — 정액제 · PC/모바일 화면</div>`;
-  h+=wipBanner("아래 화면은 <b>예시 목업</b>입니다. 승인 시 실제 '라이프밀' 검색 <b>PC·모바일 자동 캡처</b> 또는 유니 업로드 이미지로 교체합니다.");
-  h+=`<div class="section-t">브랜드검색 화면 <span class="tag">예시 · 캡처/업로드 예정</span></div>
-    <div class="frames"><div class="frame"><div class="fbar"><i></i><i></i><i></i><span class="url">search.naver.com/search?query=라이프밀</span></div>${serp(false)}</div>
+  let h=`<div class="h1">브랜드검색</div><div class="sub">네이버에 '라이프밀' 검색 시 노출되는 브랜드검색광고 — 정액제 · 성과 + PC/모바일 화면</div>`;
+  // 성과 (실데이터)
+  if(bs&&bs.windows){const w=bs.windows[String(WIN)]||bs.windows["7"];
+    h+=`<div class="section-t">브랜드검색 성과 <span class="tag">최근 ${WIN}일 · 실데이터 · 정액제</span></div>
+      <div class="grid g4">
+        ${kpi("노출",cnt(w.imp,"int"),`CTR ${w.ctr}%`,"accent")}
+        ${kpi("클릭",cnt(w.clk,"int"),"브랜드 검색 유입")}
+        ${kpi("전환",cnt(w.conv,"int","건"),"유입 전환")}
+        ${kpi("전환매출",cnt(w.convRevenue,"wonK"),"기여")}</div>`;
+    if(bs.devices&&bs.devices.length){h+=`<div class="section-t">기기별 <span class="tag">PC vs 모바일 · 28일</span></div><div class="grid g2">`;
+      const mx=Math.max(...bs.devices.map(d=>d.imp),1);
+      bs.devices.forEach(d=>h+=`<div class="card ch"><h3>${esc(d.label)} <span class="em">CTR ${d.ctr}%</span></h3>
+        <div class="big num">${numf(d.imp)}</div><div class="tiny">노출</div>
+        <div class="row"><span>클릭</span><span class="num">${numf(d.clk)}</span></div>
+        <div class="bar-mini"><i style="width:${(d.imp/mx*100).toFixed(0)}%"></i></div></div>`);
+      h+=`</div>`}
+    h+=`<div class="tiny" style="margin-top:8px">${esc(bs.note||"")}</div>`;
+  }
+  // 화면 (승인 전 목업)
+  h+=`<div class="section-t">브랜드검색 화면 <span class="wip">승인 전</span> <span class="tag">예시 · 캡처/업로드 예정</span></div>`;
+  h+=wipBanner("아래 <b>화면</b>은 예시 목업입니다. 승인 시 실제 '라이프밀' 검색 <b>PC·모바일 자동 캡처</b> 또는 유니 업로드 이미지로 교체합니다. (위 성과 지표는 실데이터)");
+  h+=`<div class="frames"><div class="frame"><div class="fbar"><i></i><i></i><i></i><span class="url">search.naver.com/search?query=라이프밀</span></div>${serp(false)}</div>
     <div class="phone"><div class="screen">${serp(true)}</div></div></div>`;
   h+=`<div class="section-t">브랜드검색 등록 키워드 <span class="tag">실데이터 · ${bkw.length}개</span></div>
     <div class="card block"><div class="chips">`;
