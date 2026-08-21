@@ -565,13 +565,16 @@ function renderStrategy(){
   const el=document.getElementById("p-strategy"), sg=D["ads-segmentation"];
   let h=`<div class="h1">세분화 전략</div><div class="sub">${sg&&sg.note?esc(sg.note):"제안 → 진행 → 된 것/안 된 것 누적 추적"}</div>`;
   if(!sg||!sg.cards||!sg.cards.length){el.innerHTML=h+empty("전략 데이터 대기");return}
+  const mode=sg.mode||"효율우선";
+  h+=`<div class="wip-banner" style="background:${mode==="볼륨확대"?"var(--good-bg)":"var(--accent-soft)"};border-color:${mode==="볼륨확대"?"var(--good)":"var(--accent)"};color:var(--ink)">
+    <span>${mode==="볼륨확대"?"🚀":"🎯"}</span><div><b>${mode==="볼륨확대"?"볼륨 확대 모드":"효율 우선 모드"}</b> — ${esc(sg.modeNote||"")}<br><span class="tiny">규칙: 개별 상품은 ROAS 330 우선 · 통합 ROAS 330 넘으면 볼륨(증액)</span></div></div>`;
   const sm=sg.summary||{};
   h+=`<div class="stat-strip">
     <div><div class="l">💡 증액기회</div><div class="v num">${sm.증액기회||0}</div></div>
     <div><div class="l">🆕 신규</div><div class="v num">${sm.신규||0}</div></div>
     <div><div class="l">⏳ 관찰중</div><div class="v num">${sm.관찰중||0}</div></div>
     <div><div class="l">✅ 개선됨</div><div class="v num">${sm.개선됨||0}</div></div></div>`;
-  const groups=[["증액기회","💡 증액 기회","잘 되는데 적게 태움 → 매출 키우기"],
+  const groups=[["증액기회","💡 증액 기회",mode==="볼륨확대"?"통합 330↑ → 지금 증액 OK":"⏳ 대기 — 통합 ROAS 330 넘으면 증액"],
                 ["신규","🆕 신규 제안","오늘 새로 뜬 개선 대상"],
                 ["관찰중","⏳ 관찰 중","제안했는데 아직 개선 안 됨"],
                 ["개선됨","✅ 개선됨","해결·회복"],
@@ -584,7 +587,7 @@ function renderStrategy(){
       const rc=c.roas==null?"var(--bad)":c.roas>=330?"var(--good)":c.roas>0?"var(--warn)":"var(--bad)";
       const trend=(c.roasFrom!=null&&c.roas!=null&&c.daysTracked>0)?` <span class="muted">(${c.roasFrom}%→${c.roas}%)</span>`:"";
       const sev=(s==="관찰중"||s==="신규")?"medium":"low";
-      const actionable=(s==="증액기회"||s==="신규"||s==="관찰중");
+      const actionable=(s==="신규"||s==="관찰중")||(s==="증액기회"&&mode==="볼륨확대");
       const line=(s==="증액기회"?"증액":"개선")+" | "+c.channel+" | "+c.product+" | "+((c.levers||[]).map(l=>l.what).join("·")||c.bottleneck);
       h+=`<div class="card strat ${sev}"><div class="top"><span class="t">${esc(c.product)}</span> ${pill("accent",esc(c.channel))} ${pill("idle",esc(c.bottleneck))}${actionable?`<label class="chk" style="margin-left:auto"><input type="checkbox" class="pick" data-line="${esc(line)}"> 선택</label>`:""}</div>
         <div class="tiny" style="margin:6px 0;color:var(--ink-3)">제안 ${c.daysTracked===0?"오늘":c.daysTracked+"일째"} · 노출 ${numf(c.imp)}·클릭 ${numf(c.clk)}·전환 ${numf(c.conv)}·CTR ${c.ctr}%·CVR ${c.cvr}% · <b style="color:${rc}">ROAS ${c.roas==null?"0":c.roas+"%"}</b>${trend}</div>
