@@ -277,7 +277,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions"];
 const D={}; let WIN=7;
 
 /* ---------- utils ---------- */
@@ -625,6 +625,28 @@ function briefingHTML(){const br=D["ads-briefing"];if(!br)return"";
   h+=briefGroup("➡️ 다음에 하려는 것",br.proposals);
   if(br.questions&&br.questions.length)h+=`<div class="grp"><h5>❓ 확인 부탁드려요</h5>`+br.questions.map(q=>`<div class="qbox"><span>❓</span><div>${mdb(q.text||q)}</div></div>`).join("")+`</div>`;
   return h+`</div>`}
+function loweffHTML(){
+  const lw=D["loweff-actions"];
+  if(!lw||!lw.proposals||!lw.proposals.length)return "";
+  const exBadge={approve:pill("bad","승인 필요"),watch:pill("warn","관측"),human:pill("idle","유니 화면"),auto:pill("good","자동")};
+  let h=`<div class="section-t">저효율 조치 <span class="tag">진단 → 실제 항목 → 조치안 → 실행</span></div>`;
+  h+=`<div class="card block" style="padding:16px 18px"><div class="tiny" style="color:var(--ink-2);line-height:1.6">
+    목표 <b>ROAS 330 유지하며 매출 최대화</b> — 저효율부터 정리. 쇼핑은 최저입찰(50원)이라 입찰레버가 없어 조치 = <b>상품 광고 OFF·제외검색어</b>(매출 영향 → 승인). 파워링크는 <b>자동 입찰조정</b> 중.</div>`;
+  if(lw.powerlinkAuto&&lw.powerlinkAuto.changed)
+    h+=`<div class="insight good" style="padding:8px 0"><span class="ic"></span><div><div class="tx">파워링크 저효율 키워드 <b>자동 조치 중</b> — ${esc(lw.powerlinkAuto.date||"")} 입찰 ${lw.powerlinkAuto.changed}키 조정(인하 ${lw.powerlinkAuto.downs||0}) <span class="muted">자동 실행·매일 기록</span></div></div></div>`;
+  h+=`</div>`;
+  h+=`<div class="card"><table><thead><tr><th>채널</th><th>항목</th><th class="r">광고비</th><th class="r">ROAS</th><th>조치안</th><th>실행</th></tr></thead><tbody>`;
+  lw.proposals.slice(0,14).forEach(p=>{
+    const rc=p.roas==null?"var(--bad)":p.roas>=330?"var(--good)":p.roas>0?"var(--warn)":"var(--bad)";
+    h+=`<tr><td>${pill("accent",esc(p.channel))}</td>
+      <td><div class="name" style="font-size:12.5px">${esc(p.item)}</div>${p.matched===false?'<div class="tiny err">소재 매칭 실패(수동 확인)</div>':""}</td>
+      <td class="r num">${won(p.spend)}</td>
+      <td class="r num" style="font-weight:800;color:${rc}">${p.roas==null?"전환0":p.roas+"%"}</td>
+      <td style="font-size:12.5px;color:var(--ink-2)">${esc(p.action)}</td>
+      <td>${exBadge[p.executor]||exBadge.watch}</td></tr>`;});
+  h+=`</tbody></table></div>`;
+  h+=`<div class="tiny" style="margin-top:8px;color:var(--ink-3)">「승인 필요」 = 매출 끊는 조치라 확인 필요. "○○ OFF 해" 하시면 제가 API로 실행(되돌리기 가능)합니다. 제안·조치 흔적은 매일 기록돼요.</div>`;
+  return h;}
 function renderReport(){
   const el=document.getElementById("p-report"), na=D["naver-ads"];
   if(!na||!na.days){el.innerHTML=`<div class="h1">일일 리포트</div>`+briefingHTML()+empty("naver-ads.json 을 불러오지 못했습니다.");return}
@@ -647,6 +669,7 @@ function renderReport(){
     +repCard("디스플레이광고 보고서","display","광고주센터 성과 보고서(reportPerformance) · 애드부스트 · 48시간 소급 반영 후 D-2 확정")
     +`</div>`;
   h+=insSection("통합 · 주요 인사이트",genInsights(na.days,null));
+  h+=loweffHTML();
   h+=insSection("검색광고 보고서 · 주요 인사이트",genInsights(na.days,"search"));
   h+=insSection("디스플레이광고 보고서 · 주요 인사이트",genInsights(na.days,"display"));
   el.innerHTML=h}
