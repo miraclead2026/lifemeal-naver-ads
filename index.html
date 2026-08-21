@@ -570,12 +570,19 @@ function renderStrategy(){
     <span>${mode==="볼륨확대"?"🚀":"🎯"}</span><div><b>${mode==="볼륨확대"?"볼륨 확대 모드":"효율 우선 모드"}</b> — ${esc(sg.modeNote||"")}<br><span class="tiny">규칙: 개별 상품은 ROAS 330 우선 · 통합 ROAS 330 넘으면 볼륨(증액)</span></div></div>`;
   const sm=sg.summary||{};
   h+=`<div class="stat-strip">
-    <div><div class="l">💡 증액기회</div><div class="v num">${sm.증액기회||0}</div></div>
+    <div><div class="l">통합 ROAS</div><div class="v num" style="color:${(sg.combinedRoas||0)>=330?'var(--good)':'var(--warn)'}">${sg.combinedRoas==null?"—":sg.combinedRoas+"%"}</div></div>
     <div><div class="l">🆕 신규</div><div class="v num">${sm.신규||0}</div></div>
     <div><div class="l">⏳ 관찰중</div><div class="v num">${sm.관찰중||0}</div></div>
     <div><div class="l">✅ 개선됨</div><div class="v num">${sm.개선됨||0}</div></div></div>`;
-  const groups=[["증액기회","💡 증액 기회",mode==="볼륨확대"?"통합 330↑ → 지금 증액 OK":"⏳ 대기 — 통합 ROAS 330 넘으면 증액"],
-                ["신규","🆕 신규 제안","오늘 새로 뜬 개선 대상"],
+  // 증액 = 그룹 예산 (개별 상품 증액 불가 — 자동입찰)
+  h+=`<div class="section-t">💡 증액 (그룹 예산)</div>`;
+  if(mode==="볼륨확대"&&sg.budgetProposal){const bp=sg.budgetProposal;
+    h+=`<div class="card strat low"><div class="top"><span class="t">쇼핑 그룹 예산 증액</span> ${pill("good","지금 OK")}</div>
+      <div class="action">${esc(bp.action)}</div><div class="tiny" style="margin-top:5px;color:var(--ink-2)">${esc(bp.reason)}</div>
+      <div style="margin-top:8px"><label class="chk"><input type="checkbox" class="pick" data-line="증액 | 쇼핑검색 | 그룹 일예산 | ${esc(bp.action)}"> 선택</label></div></div>`;
+  }else{
+    h+=`<div class="card block"><div class="tiny" style="color:var(--ink-2);line-height:1.6">지금은 <b>효율 우선 모드</b>라 증액 대기입니다. 통합 ROAS가 330을 넘으면 여기 <b>그룹 예산 증액</b> 제안이 열려요. <b>입찰가·개별 상품 증액은 자동입찰이라 불가</b> — 증액 레버는 그룹 일예산뿐입니다.</div></div>`;}
+  const groups=[["신규","🆕 신규 제안","오늘 새로 뜬 개선 대상"],
                 ["관찰중","⏳ 관찰 중","제안했는데 아직 개선 안 됨"],
                 ["개선됨","✅ 개선됨","해결·회복"],
                 ["양호","현재 양호",""]];
