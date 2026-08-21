@@ -580,23 +580,37 @@ function renderWeekly(){
 const byDate=(a,b)=>a.date<b.date?-1:1;
 function chSum(days,channel){const t={spend:0,convRevenue:0,purchaseConv:0,clicks:0,impressions:0};
   days.forEach(d=>(d.groups||[]).forEach(g=>{if(channel&&g.channel!==channel)return;["spend","convRevenue","purchaseConv","clicks","impressions"].forEach(k=>t[k]+=(g[k]||0))}));return t}
+const chLabel=c=>({display:"애드부스트",search:"쇼핑검색"})[c]||c||"";
 function genInsights(days,channel){
   const s=[...days].sort(byDate), l=s.slice(-7), pv=s.slice(-14,-7);
   const t=chSum(l,channel), p=chSum(pv,channel), out=[];
   if(t.spend<=0)return[{level:"info",text:"최근 7일 집행 데이터 없음"}];
   const r=roas(t.convRevenue,t.spend);
-  out.push({level:r>=330?"good":r>0?"warn":"bad",text:`ROAS <b>${r==null?"—":r+"%"}</b> — 목표 330% ${r>=330?"달성":"미달"}`,
-    mt:`광고비 ${won(t.spend)} · 전환매출 ${won(t.convRevenue)} · 전환 ${numf(t.purchaseConv)}건`});
+  // 목표 = ROAS 330% 유지하며 매출 최대화
+  if(r>=330) out.push({level:"good",text:`ROAS <b>${r}%</b> — 목표 330% 달성 👍 이제 <b>잘 되는 광고에 더 태워 매출을 키울</b> 단계.`,mt:`광고비 ${won(t.spend)} · 전환매출 ${won(t.convRevenue)}`});
+  else out.push({level:"warn",text:`ROAS <b>${r}%</b> — 목표 330% 미달. <b>매출 확대보다 저효율 정리(효율 회복)가 먼저.</b>`,mt:`광고비 ${won(t.spend)} · 전환매출 ${won(t.convRevenue)}`});
   if(p.spend>0){const pr=roas(p.convRevenue,p.spend),d=r-(pr||0);
-    out.push({level:d>=0?"good":"warn",text:`ROAS 전주 대비 <b>${d>=0?"+":""}${d}%p</b>`,mt:`${pr==null?"—":pr+"%"} → ${r}%`});
-    const dp=Math.round((t.spend/p.spend-1)*100);
-    out.push({level:"info",text:`광고비 전주 대비 <b>${dp>=0?"+":""}${dp}%</b>`,mt:`${wonK(p.spend)} → ${wonK(t.spend)}`})}
+    out.push({level:d>=0?"good":"warn",text:`전주 대비 ROAS <b>${d>=0?"+":""}${d}%p</b> (${pr==null?"—":pr+"%"}→${r}%)`});}
   const grp=aggGroups(l).filter(g=>g.spend>0&&(!channel||g.channel===channel));
-  const conv=grp.filter(g=>g.purchaseConv>0).sort((a,b)=>roas(b.convRevenue,b.spend)-roas(a.convRevenue,a.spend));
-  if(conv.length)out.push({level:"good",text:`최고 효율 <b>${esc(conv[0].adGroupName||"-")}</b> ROAS ${roas(conv[0].convRevenue,conv[0].spend)}%`,mt:`광고비 ${won(conv[0].spend)} · 전환 ${numf(conv[0].purchaseConv)}건`});
-  const zero=grp.filter(g=>g.purchaseConv===0&&g.spend>=1000);
+  const conv=grp.filter(g=>g.purchaseConv>0);
+  const spends=grp.map(g=>g.spend).sort((a,b)=>a-b);
+  const med=spends.length?spends[Math.floor(spends.length/2)]:0;
+  // 증액 기회 = 고ROAS + 저지출 (매출 최대화 레버)
+  const scale=conv.filter(g=>roas(g.convRevenue,g.spend)>=400 && g.spend<=Math.max(med,50000))
+                  .sort((a,b)=>roas(b.convRevenue,b.spend)-roas(a.convRevenue,a.spend));
+  if(scale.length){const g=scale[0],rr=roas(g.convRevenue,g.spend);
+    out.push({level:"good",text:`💡 <b>증액 기회</b> · ${esc(g.adGroupName||"-")} <span class="muted">(${chLabel(g.channel)})</span> ROAS <b>${rr}%</b>인데 광고비 ${won(g.spend)}뿐`,
+      mt:`→ 예산·입찰을 올리면 330 유지하며 매출↑ 여지 큼${g.spend<10000?" (표본 작아 점진 증액)":""}`});}
+  // 개선 = 저ROAS + 지출 있음
+  const low=conv.filter(g=>roas(g.convRevenue,g.spend)<330 && g.spend>=10000).sort((a,b)=>b.spend-a.spend);
+  if(low.length){const g=low[0];
+    out.push({level:"warn",text:`🔧 <b>개선</b> · ${esc(g.adGroupName||"-")} <span class="muted">(${chLabel(g.channel)})</span> ROAS <b>${roas(g.convRevenue,g.spend)}%</b> · 광고비 ${won(g.spend)}`,
+      mt:`→ 저효율 상품·키워드 정리, 입찰 조정으로 330부터 회복`});}
+  // 점검 = 전환0 낭비
+  const zero=grp.filter(g=>g.purchaseConv===0&&g.spend>=1000).sort((a,b)=>b.spend-a.spend);
   if(zero.length){const zs=zero.reduce((a,g)=>a+g.spend,0);
-    out.push({level:zero.length>=3?"bad":"warn",text:`전환 0 그룹 <b>${zero.length}개</b> — 광고비 ${won(zs)} 소진`,mt:esc(zero.sort((a,b)=>b.spend-a.spend).slice(0,4).map(g=>g.adGroupName).join(", "))})}
+    out.push({level:zero.length>=3?"bad":"warn",text:`🗑 <b>점검</b> · 전환 0 그룹 ${zero.length}개, 광고비 ${won(zs)} 소진 <span class="muted">(${esc(zero.slice(0,3).map(g=>g.adGroupName).join(", "))})</span>`,
+      mt:`→ 노출·랜딩 점검 후 안 되면 제외/축소`});}
   return out}
 function insSection(title,arr){return `<div class="section-t">${title}</div><div class="card">`+
   arr.map(i=>`<div class="insight ${i.level}"><span class="ic"></span><div><div class="tx">${i.text}</div>${i.mt?`<div class="mt">${i.mt}</div>`:""}</div></div>`).join("")+`</div>`}
