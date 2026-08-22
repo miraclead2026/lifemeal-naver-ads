@@ -591,6 +591,17 @@ function renderAdvoost(){
   if(!a){el.innerHTML=empty("advoost-agent.json 을 불러오지 못했습니다.");return}
   let h=`<div class="h1">애드부스트 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">디스플레이 · GFA 자동광고</span></div>
     <div class="sub">지금 상황 · 한 일 · 할 일 — 매일 자동 갱신</div>`;
+  // 디스플레이 광고 구성 — 애드부스트쇼핑 ≠ 카탈로그 ≠ 성과형 명확 분리
+  const na=D["naver-ads"];
+  if(na&&na.days){const dsub=aggDisplaySub(daysWindow(na.days,WIN));
+    const order=[["애드부스트쇼핑","애드부스트 쇼핑 (신규 유입)"],["카탈로그","카탈로그 (리타겟)"],["성과형","성과형 (웹전환)"],["테스트","테스트"]];
+    h+=`<div class="section-t">디스플레이 광고 구성 <span class="tag">최근 ${WIN}일 · 애드부스트쇼핑 ≠ 카탈로그</span></div><div class="card"><table><thead><tr><th>유형</th><th class="r">광고비</th><th class="r">전환</th><th class="r">전환매출</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
+    let any=false;
+    order.forEach(([k,label])=>{const g=dsub[k];if(!g||g.spend<=0)return;any=true;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
+      h+=`<tr><td class="name">${esc(label)}</td><td class="r num">${won(g.spend)}</td><td class="r num">${numf(g.purchaseConv)}</td><td class="r num">${won(g.convRevenue)}</td><td class="r num" style="font-weight:800;color:var(--${cls==='idle'?'ink-3':cls})">${roasT(g.convRevenue,g.spend)}</td><td>${pill(cls,effLabel[cls])}</td></tr>`;});
+    if(!any)h+=`<tr><td colspan="6" class="empty">디스플레이 집행 데이터 없음</td></tr>`;
+    h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">애드부스트 쇼핑 = 디스플레이 안의 쇼핑 자동광고(신규 유입) · 카탈로그 = 상품 카탈로그 리타겟 — 별개 광고라 따로 봅니다.</div>`;
+  }
   // 지금 상황 + 추이
   if(a.performance){const p=a.performance,l=p.latest||{};
     h+=`<div class="section-t">지금 상황 <span class="tag">최근 확정 ${fmtDate(l.date)}</span></div><div class="grid g4">
