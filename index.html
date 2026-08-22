@@ -306,7 +306,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution","powerlink-searchterms"];
 const D={}; let WIN=7;
 /* 기간 선택(홈 KPI·채널현황 전용): 일별=1 / 주별=7 / 월별=30 / 기간=커스텀 */
 let PMODE="week", PSTART=null, PEND=null;
@@ -931,6 +931,14 @@ function renderDict(){
   const day=add&&add.days&&add.days.length?add.days.at(-1):null;
   h+=`<div class="section-t">트렌드 키워드 라우팅 <span class="tag">트렌드 정보를 어떻게 읽나</span></div>`;
   if(day)h+=`<div class="grid g3">${routeCard("파워링크 등록",day.added||[],"reg")}${routeCard("제외/반려",day.rejected||[],"r")}${routeCard("보류(목적지 불명)",day.held||[],"r")}</div>`;
+  // 파워링크 검색어 신규후보 (EXPKEYWORD, 2026-08-23 신규 수집)
+  const plst=D["powerlink-searchterms"];
+  if(plst&&plst.newCandidates){
+    h+=`<div class="section-t">파워링크 검색어 · 신규 키워드 후보 <span class="tag">확장검색 실제 쿼리 7일 · ${plst.counts?plst.counts.newCandidates:0}개</span></div>`;
+    h+=`<div class="card block"><div class="tiny" style="color:var(--ink-2);margin-bottom:8px">${esc(plst.note||"")}</div><table><thead><tr><th>검색어</th><th class="r">클릭</th><th class="r">비용</th><th>관련성</th></tr></thead><tbody>`;
+    plst.newCandidates.slice(0,15).forEach(r=>h+=`<tr><td class="name">${esc(r.term)}</td><td class="r num">${numf(r.clk)}</td><td class="r num">${won(r.cost)}</td><td>${pill(r.relevance==="관련"?"good":"warn",esc(r.relevance))}</td></tr>`);
+    h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">확장검색으로 유입되는데 미등록인 쿼리 — 관련이면 파워링크/브랜드 키워드로 등록해 입찰 통제.</div>`;
+  }
   else h+=`<div class="card"><div class="empty">트렌드 추가 이력 대기</div></div>`;
   el.innerHTML=h}
 
