@@ -519,6 +519,7 @@ function renderShopping(){
       <div style="height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin:6px 0 10px"><div style="height:100%;width:${pct}%;background:var(--${okCls})"></div></div>
       ${series.length?`<div class="tiny" style="margin-bottom:4px">일별 ROAS 추이(14일)</div>${spark(series,"var(--accent)")}`:""}
       ${sprint.note?`<div class="meta" style="margin-top:8px"><b>냉정한 진단</b> ${esc(sprint.note)}</div>`:""}
+      ${sprint.nextSteps&&sprint.nextSteps.length?`<div class="tiny" style="margin:10px 0 4px;font-weight:700">결과별 다음 계획</div><ul style="margin:0;padding-left:18px" class="tiny">${sprint.nextSteps.map(s=>`<li style="margin:2px 0">${esc(s)}</li>`).join("")}</ul>`:""}
       ${sprint.actions&&sprint.actions.length?`<div class="tiny" style="margin:10px 0 4px;font-weight:700">조치 이력</div><div class="tl">${sprint.actions.map(a=>`<div class="it"><div class="dt">${fmtDate(a.date)}</div><div class="wt"><span class="cat">${esc(a.cat||"")}</span>${esc(a.what||"")}</div>${a.detail?`<div class="de">${esc(a.detail)}</div>`:""}</div>`).join("")}</div>`:""}
     </div>`;
   }
