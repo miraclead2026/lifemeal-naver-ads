@@ -250,10 +250,17 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
     <div class="brand"><span class="dot">L</span> 라이프밀 · 네이버 광고 센터 <small id="fresh-inline"></small></div>
     <div class="bar-right">
       <span class="fresh" id="fresh">데이터 불러오는 중…</span>
-      <div class="seg" id="win">
-        <button data-w="7" class="on">최근 7일</button>
-        <button data-w="28">28일</button>
+      <div class="seg" id="period">
+        <button data-m="day">일별</button>
+        <button data-m="week" class="on">주별</button>
+        <button data-m="month">월별</button>
+        <button data-m="custom">기간</button>
       </div>
+      <span id="daterange" style="display:none;align-items:center;gap:5px;font-size:12px">
+        <input type="date" id="dstart" style="font-size:12px;padding:3px 6px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink)">
+        <span>~</span>
+        <input type="date" id="dend" style="font-size:12px;padding:3px 6px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink)">
+      </span>
     </div>
   </div>
   <nav class="tabs" id="tabs">
@@ -301,6 +308,15 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
 const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution"];
 const D={}; let WIN=7;
+/* 기간 선택(홈 KPI·채널현황 전용): 일별=1 / 주별=7 / 월별=30 / 기간=커스텀 */
+let PMODE="week", PSTART=null, PEND=null;
+const PDAYS={day:1,week:7,month:30};
+function periodDays(days){const s=[...(days||[])].sort(byDate);
+  if(PMODE==="custom"&&PSTART&&PEND)return s.filter(d=>d.date>=PSTART&&d.date<=PEND);
+  return s.slice(-(PDAYS[PMODE]||7));}
+function periodLabel(){const m={day:"일별",week:"주별(7일)",month:"월별(30일)"};
+  if(PMODE==="custom"&&PSTART&&PEND)return `${fmtDate(PSTART)}~${fmtDate(PEND)}`;
+  return m[PMODE]||"주별";}
 
 /* ---------- utils ---------- */
 const won=n=>n==null?"—":"₩"+Math.round(n).toLocaleString("ko-KR");
@@ -354,59 +370,73 @@ function spark(vals,color){vals=vals.filter(v=>v!=null);if(vals.length<2)return"
     <circle cx="${pts.at(-1)[0].toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="3" fill="${color}"/></svg>`}
 
 /* ================= HOME ================= */
+function displaySub(cn){const n=cn||"";
+  if(n.includes("카탈로그"))return"카탈로그";
+  if(n.includes("ADVoost")||n.includes("애드부스트"))return"애드부스트쇼핑";
+  if(n.includes("웹전환")||n.includes("프로스펙팅")||n.includes("성과형"))return"성과형";
+  if(n.includes("판매부진")||n.includes("테스트"))return"테스트";
+  return"기타 디스플레이";}
+function aggDisplaySub(dw){const m={};
+  dw.forEach(d=>(d.groups||[]).filter(g=>g.channel==="display").forEach(g=>{
+    const k=displaySub(g.campaignName);if(!m[k])m[k]={name:k,spend:0,convRevenue:0,purchaseConv:0};
+    m[k].spend+=(g.spend||0);m[k].convRevenue+=(g.convRevenue||0);m[k].purchaseConv+=(g.purchaseConv||0);}));
+  return m;}
+function stageCard(name,em,stage,latest){
+  return `<div class="card block"><h4>${esc(name)} <span class="tiny" style="font-weight:600;color:var(--ink-3)">${esc(em)}</span></h4>
+    <div style="font-size:13.5px;font-weight:700;color:var(--accent);margin:7px 0 4px">▶ ${esc(stage)}</div>
+    ${latest?`<div class="tiny">최근: ${esc(latest)}</div>`:""}</div>`;}
+function stageSection(){
+  const sp=D["shopping-sprint"],aa=D["advoost-agent"],bl=D["bid-log"];
+  let h=`<div class="section-t">현재 실행 단계 <span class="tag">지금 각 채널에서 뭐 하고 있나</span></div><div class="grid g2">`;
+  let plLatest=""; if(bl&&bl.days&&bl.days.length){const d=bl.days.at(-1);plLatest=`${fmtDate(d.date)} 입찰 ${d.summary?d.summary.changed:0}건 조정`;}
+  h+=stageCard("파워링크","검색광고","입찰 극대화 — 효율 대비 예산 미소진, auto_bid 공격 증액으로 노출 확보(상한 2500)",plLatest);
+  const ssStage=sp?`${sp.goal}% 스프린트 — 수동입찰 전환·저효율 정리·고ROAS 소재 입찰 상향`:"수동입찰 최적화";
+  const ssLatest=sp&&sp.actions&&sp.actions[0]?`${fmtDate(sp.actions[0].date)} ${sp.actions[0].what}`:"";
+  h+=stageCard("쇼핑검색","검색광고 · 상품",ssStage,ssLatest);
+  const adStage=aa&&aa.plan&&aa.plan[0]?esc(aa.plan[0].title):"효율 분석·개선안 준비 중";
+  const adLatest=aa&&aa.timeline&&aa.timeline[0]?`${fmtDate(aa.timeline[0].date)} ${aa.timeline[0].what||""}`:"";
+  h+=stageCard("애드부스트 쇼핑","디스플레이 · 애드부스트",adStage,adLatest);
+  h+=stageCard("카탈로그","디스플레이 · 리타겟","카탈로그 판매 집행 — 애드부스트쇼핑과 분리 관리·효율 모니터링","");
+  h+=`</div>`;return h;}
 function renderHome(){
   const el=document.getElementById("p-home");
   const na=D["naver-ads"];
   if(!na||!na.days){el.innerHTML=empty("naver-ads.json 을 불러오지 못했습니다.");return}
-  const dw=daysWindow(na.days,WIN), t=sumSummary(dw), ch=groupsByChannel(dw);
-  const chMeta={display:{name:"애드부스트",em:"디스플레이"},search:{name:"쇼핑검색",em:"검색광고"}};
+  const dw=periodDays(na.days), t=sumSummary(dw), ch=groupsByChannel(dw), dsub=aggDisplaySub(dw);
   const pl=na.powerlink;
 
-  // KPI
   let h=`<div class="h1">광고 리포트</div>
-    <div class="sub">지금 무슨 광고가 돌고 있고 무엇이 효율적인지 — 최근 ${WIN}일 통합 기준 ${dw.length?`(${fmtDate(dw[0].date)}~${fmtDate(dw.at(-1).date)})`:""}</div>
+    <div class="sub">지금 무슨 광고가 돌고 있고 무엇이 효율적인지 — <b>${periodLabel()}</b> 통합 기준 ${dw.length?`(${fmtDate(dw[0].date)}~${fmtDate(dw.at(-1).date)})`:""}</div>
     <div class="grid g4">
-      ${kpi("총 광고비",cnt(t.spend,"wonK"),`${dw.length}일 합계`,"accent")}
+      ${kpi("총 광고비",cnt(t.spend,"wonK"),`${periodLabel()} 합계`,"accent")}
       ${kpi("전환 매출",cnt(t.convRevenue,"wonK"),"구매 완료 기여")}
       ${kpi("통합 ROAS",cnt(roas(t.convRevenue,t.spend)||0,"pct"),`목표 330% ${roas(t.convRevenue,t.spend)>=330?"달성":"미달"}`)}
       ${kpi("전환 수",cnt(t.purchaseConv,"int","건"),`클릭 ${numf(t.clicks)} · 노출 ${numf(t.impressions)}`)}
     </div>`;
 
-  // 채널 카드
-  h+=`<div class="section-t">채널별 현황 <span class="tag">애드부스트·쇼핑검색 = 최근 ${WIN}일 · 파워링크 = 28일</span></div><div class="grid g3">`;
-  ["display","search"].forEach(c=>{const g=ch[c];if(!g)return;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
-    h+=channelCard(chMeta[c].name,chMeta[c].em,g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1))});
+  // 채널별 현황 — 디스플레이 하위(애드부스트쇼핑·카탈로그·성과형) 분리 + 쇼핑검색 + 파워링크
+  h+=`<div class="section-t">채널별 현황 <span class="tag">디스플레이·쇼핑검색=${periodLabel()} · 파워링크=28일</span></div><div class="grid g3">`;
+  [["애드부스트쇼핑","디스플레이 · 애드부스트"],["카탈로그","디스플레이 · 리타겟"],["성과형","디스플레이 · 웹전환"]].forEach(([k,em])=>{
+    const g=dsub[k];if(!g||g.spend<=0)return;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
+    h+=channelCard(k,em,g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1));});
+  if(ch.search){const g=ch.search;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
+    h+=channelCard("쇼핑검색","검색광고",g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1));}
   if(pl&&pl.subLines){const ps=pl.subLines.reduce((a,s)=>({spend:a.spend+(s.spend28||0),rev:a.rev+(s.convRevenue28||0),conv:a.conv+(s.purchaseConv28||0),kw:a.kw+(s.keywordCount||0)}),{spend:0,rev:0,conv:0,kw:0});
     const cls=effClass(ps.rev,ps.spend,ps.conv);
-    h+=channelCard("파워링크","검색광고 · 28일",ps.spend,ps.rev,ps.conv,cls,ps.spend/(t.spend||1),`키워드 ${numf(ps.kw)}개`)}
+    h+=channelCard("파워링크","검색광고 · 28일",ps.spend,ps.rev,ps.conv,cls,ps.spend/(t.spend||1),`키워드 ${numf(ps.kw)}개`);}
   h+=`</div>`;
 
-  // 지금 돌아가는 광고
-  const rows=aggGroups(dw).filter(g=>g.spend>0).sort((a,b)=>b.spend-a.spend);
-  h+=`<div class="section-t">지금 돌아가는 광고 <span class="tag">${rows.length}개 그룹 · 지출순</span></div>
-    <div class="card"><table><thead><tr><th>채널</th><th>캠페인 / 광고그룹</th><th class="r">광고비</th><th class="r">전환</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
-  if(!rows.length)h+=`<tr><td colspan="6" class="empty">최근 ${WIN}일 집행된 그룹이 없습니다.</td></tr>`;
-  rows.slice(0,14).forEach(g=>{const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
-    h+=`<tr><td>${chBadge(g.channel)}</td>
-      <td><div class="name">${esc(g.adGroupName||"-")}</div><div class="tiny">${esc(g.campaignName||"")}</div></td>
-      <td class="r num">${won(g.spend)}</td><td class="r num">${numf(g.purchaseConv)}</td>
-      <td class="r num" style="font-weight:800;color:${cls==='good'?'var(--good)':cls==='warn'?'var(--warn)':cls==='bad'?'var(--bad)':'var(--ink-3)'}">${roasT(g.convRevenue,g.spend)}</td>
-      <td>${pill(cls,effLabel[cls])}</td></tr>`});
-  h+=`</tbody></table></div>`;
+  // 지금 돌아가는 광고 → 채널별 현재 실행 단계
+  h+=stageSection();
 
-  // 효율 하이라이트 + 오늘 한 일
+  // 효율 하이라이트
+  const rows=aggGroups(dw).filter(g=>g.spend>0).sort((a,b)=>b.spend-a.spend);
   const conv=rows.filter(g=>g.purchaseConv>0);
   const best=[...conv].sort((a,b)=>roas(b.convRevenue,b.spend)-roas(a.convRevenue,a.spend)).slice(0,3);
   const worst=[...rows].filter(g=>g.spend>=3000).sort((a,b)=>(roas(a.convRevenue,a.spend)||0)-(roas(b.convRevenue,b.spend)||0)).slice(0,3);
   h+=`<div class="grid g2"><div>`;
   h+=`<div class="section-t">잘 되는 광고</div><div class="card">${miniList(best,"good")}</div></div><div>`;
   h+=`<div class="section-t">주의 필요</div><div class="card">${miniList(worst,"bad")}</div></div></div>`;
-
-  // 각 영역 오늘 활동
-  h+=`<div class="section-t">각 영역 최근 활동</div><div class="grid g2">`;
-  h+=agentTeaser("파워링크",D["powerlink-agent"]);
-  h+=agentTeaser("애드부스트",D["advoost-agent"]);
-  h+=`</div>`;
   el.innerHTML=h;
 }
 function kpi(l,v,d,extra=""){return `<div class="card kpi ${extra}"><div class="l">${l}</div><div class="v num">${v}</div><div class="d">${d}</div></div>`}
@@ -519,8 +549,7 @@ function renderShopping(){
       <div style="height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin:6px 0 10px"><div style="height:100%;width:${pct}%;background:var(--${okCls})"></div></div>
       ${series.length?`<div class="tiny" style="margin-bottom:4px">일별 ROAS 추이(14일)</div>${spark(series,"var(--accent)")}`:""}
       ${sprint.note?`<div class="meta" style="margin-top:8px"><b>냉정한 진단</b> ${esc(sprint.note)}</div>`:""}
-      ${sprint.nextSteps&&sprint.nextSteps.length?`<div class="tiny" style="margin:10px 0 4px;font-weight:700">결과별 다음 계획</div><ul style="margin:0;padding-left:18px" class="tiny">${sprint.nextSteps.map(s=>`<li style="margin:2px 0">${esc(s)}</li>`).join("")}</ul>`:""}
-      ${sprint.actions&&sprint.actions.length?`<div class="tiny" style="margin:10px 0 4px;font-weight:700">조치 이력</div><div class="tl">${sprint.actions.map(a=>`<div class="it"><div class="dt">${fmtDate(a.date)}</div><div class="wt"><span class="cat">${esc(a.cat||"")}</span>${esc(a.what||"")}</div>${a.detail?`<div class="de">${esc(a.detail)}</div>`:""}</div>`).join("")}</div>`:""}
+      <div class="tiny" style="margin-top:8px;color:var(--ink-3)">↓ 한 일·다음 할 일은 아래 타임라인에서</div>
     </div>`;
   }
   h+=`<div class="section-t">지금 상황</div>`;
@@ -540,15 +569,18 @@ function renderShopping(){
       h+=`<tr><td class="name">${esc(p.name)}</td><td class="r num">${won(p.spend)}</td><td class="r num">${numf(p.purchaseConv)}</td>
       <td class="r num" style="font-weight:800;color:var(--${cls==='idle'?'ink-3':cls})">${roasT(p.convRevenue,p.spend)}</td><td>${pill(cls,effLabel[cls])}</td></tr>`});
     h+=`</tbody></table></div>`}
-  // 최적화 카드
-  h+=`<div class="section-t">할 일 · 최적화 제안</div>`;
-  if(sp&&sp.cards&&sp.cards.length){h+=`<div class="grid g2">`;
-    sp.cards.forEach(c=>{h+=`<div class="card strat ${esc(c.severity)}"><div class="top">
-      <span class="t">${esc(c.title)}</span>${pill(c.severity==="high"?"bad":c.severity==="medium"?"warn":"accent",esc(c.status||c.type))}</div>
-      <div class="action">${esc(c.action)}</div><div class="meta"><b>이유</b> ${esc(c.reason||"")}</div>
-      ${c.nextStep?`<div class="meta" style="margin-top:6px"><b>다음</b> ${esc(c.nextStep)}</div>`:""}</div>`});
-    h+=`</div>`}
-  else h+=`<div class="card"><div class="empty">최적화 제안 대기</div></div>`;
+  // 한 일 · 타임라인 (미션 조치 기록) — 파워링크/애드부스트와 동일 형식
+  const sprint2=D["shopping-sprint"];
+  h+=`<div class="section-t">한 일 · 타임라인 <span class="tag">330% 미션 조치 기록</span></div><div class="card block"><div class="tl">`;
+  if(sprint2&&sprint2.actions&&sprint2.actions.length)
+    sprint2.actions.forEach(a=>h+=`<div class="it"><div class="dt">${fmtDate(a.date)}</div><div class="wt"><span class="cat">${esc(a.cat||"")}</span>${esc(a.what||"")}</div>${a.detail?`<div class="de">${esc(a.detail)}</div>`:""}</div>`);
+  else h+=`<div class="tiny">조치 대기</div>`;
+  h+=`</div></div>`;
+  // 다음 할 일
+  if(sprint2&&sprint2.nextSteps&&sprint2.nextSteps.length){
+    h+=`<div class="section-t">다음 할 일 <span class="tag">결과별 계획</span></div><div class="card block"><ul style="margin:0;padding-left:18px" class="tiny">`;
+    sprint2.nextSteps.forEach(s=>h+=`<li style="margin:3px 0">${esc(s)}</li>`);
+    h+=`</ul></div>`;}
   el.innerHTML=h;
 }
 
@@ -895,9 +927,15 @@ document.getElementById("tabs").addEventListener("click",e=>{const a=e.target.cl
   document.querySelectorAll(".page").forEach(s=>s.classList.toggle("on",s.id==="p-"+p));
   animatePage(document.getElementById("p-"+p));
   history.replaceState(null,"","#"+p);window.scrollTo(0,0)});
-// window toggle
-document.getElementById("win").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
-  WIN=+b.dataset.w;document.querySelectorAll("#win button").forEach(x=>x.classList.toggle("on",x===b));renderAll()});
+// 기간 선택 (홈 KPI·채널현황)
+document.getElementById("period").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  PMODE=b.dataset.m;document.querySelectorAll("#period button").forEach(x=>x.classList.toggle("on",x===b));
+  const dr=document.getElementById("daterange");dr.style.display=PMODE==="custom"?"inline-flex":"none";
+  if(PMODE!=="custom"){WIN=PDAYS[PMODE]||7;renderAll();}});
+function applyCustom(){const s=document.getElementById("dstart").value,en=document.getElementById("dend").value;
+  if(s&&en){PSTART=s;PEND=en;PMODE="custom";renderAll();}}
+document.getElementById("dstart").addEventListener("change",applyCustom);
+document.getElementById("dend").addEventListener("change",applyCustom);
 // 체크 → 조치 메시지 복사 (Firebase 대신 붙여넣기 승인)
 function updateCopybar(){const n=document.querySelectorAll(".pick:checked").length;
   const cnt=document.getElementById("cbcount");if(cnt)cnt.textContent=n;
