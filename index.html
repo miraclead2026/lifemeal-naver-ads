@@ -601,6 +601,21 @@ function renderAdvoost(){
       h+=`<tr><td class="name">${esc(label)}</td><td class="r num">${won(g.spend)}</td><td class="r num">${numf(g.purchaseConv)}</td><td class="r num">${won(g.convRevenue)}</td><td class="r num" style="font-weight:800;color:var(--${cls==='idle'?'ink-3':cls})">${roasT(g.convRevenue,g.spend)}</td><td>${pill(cls,effLabel[cls])}</td></tr>`;});
     if(!any)h+=`<tr><td colspan="6" class="empty">디스플레이 집행 데이터 없음</td></tr>`;
     h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">애드부스트 쇼핑 = 디스플레이 안의 쇼핑 자동광고(신규 유입) · 카탈로그 = 상품 카탈로그 리타겟 — 별개 광고라 따로 봅니다.</div>`;
+    // 장바구니 이탈 · 리타겟 기회 (성과보고서 cart 지표, 신규 수집)
+    const dw2=daysWindow(na.days,WIN);
+    let cc=0,cr=0,pc=0,pr=0; const cprod={};
+    dw2.forEach(d=>(d.groups||[]).forEach(g=>{if(g.channel==="display"){cc+=g.cartConv||0;cr+=g.cartRevenue||0;pc+=g.purchaseConv||0;pr+=g.convRevenue||0}}));
+    dw2.forEach(d=>(d.products||[]).forEach(p=>{if(p.channel==="display"&&(p.cartRevenue||0)>0){const k=p.groupName||p.name;const s=cprod[k]||(cprod[k]={name:k,cart:0,pur:0});s.cart+=p.cartRevenue||0;s.pur+=p.convRevenue||0}}));
+    if(cc>0){const crows=Object.values(cprod).sort((a,b)=>(b.cart-b.pur)-(a.cart-a.pur)).slice(0,8);
+      h+=`<div class="section-t">장바구니 이탈 · 리타겟 기회 <span class="tag">최근 ${WIN}일 · 담고 안 산 잠재</span></div><div class="grid g4">
+        ${kpi("장바구니 담김",wonK(cr),numf(cc)+"건","accent")}
+        ${kpi("구매완료",wonK(pr),numf(pc)+"건")}
+        ${kpi("이탈 잠재",wonK(Math.max(0,cr-pr)),"카탈로그 회수 대상")}
+        ${kpi("담기→구매",cc?Math.round(pc/cc*100)+"%":"—","낮을수록 회수 여지↑")}</div>`;
+      h+=`<div class="card" style="margin-top:12px"><table><thead><tr><th>상품군</th><th class="r">장바구니 매출</th><th class="r">구매완료 매출</th><th class="r">이탈 잠재</th></tr></thead><tbody>`;
+      crows.forEach(r=>h+=`<tr><td class="name">${esc(r.name)}</td><td class="r num">${won(r.cart)}</td><td class="r num">${won(r.pur)}</td><td class="r num" style="font-weight:800;color:var(--warn)">${won(Math.max(0,r.cart-r.pur))}</td></tr>`);
+      h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">담고 안 산 잠재 = <b>카탈로그(리타겟)</b> 회수 대상. 성과보고서의 장바구니 지표를 이제 <b>매일 수집</b>합니다.</div>`;
+    }
   }
   // 지금 상황 + 추이
   if(a.performance){const p=a.performance,l=p.latest||{};
