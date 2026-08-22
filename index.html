@@ -299,7 +299,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution"];
 const D={}; let WIN=7;
 
 /* ---------- utils ---------- */
@@ -730,6 +730,18 @@ function loweffHTML(){
   h+=`</tbody></table></div>`;
   h+=`<div class="tiny" style="margin-top:8px;color:var(--ink-3)">「승인 필요」 = 매출 끊는 조치라 확인 필요. "○○ OFF 해" 하시면 제가 API로 실행(되돌리기 가능)합니다. 제안·조치 흔적은 매일 기록돼요.</div>`;
   return h;}
+function storeAttrHTML(){
+  const sa=D["store-ad-attribution"]; if(!sa) return "";
+  const w=WIN>=14?sa.d14:(sa.d7||sa.d14); if(!w||!w.rows) return "";
+  let h=`<div class="section-t">광고 채널별 스토어 실결제 귀속 <span class="tag">라스트클릭 · ${fmtDate(w.since)}~${fmtDate(w.until)}</span></div>`;
+  h+=`<div class="card block" style="padding:13px 16px"><div class="tiny" style="color:var(--ink-2);line-height:1.6">${esc(sa.note||"")}</div></div>`;
+  h+=`<div class="card"><table><thead><tr><th>채널</th><th class="r">광고비</th><th class="r">스토어 실결제</th><th class="r">스토어 ROAS</th></tr></thead><tbody>`;
+  w.rows.forEach(r=>{const rc=r.storeRoas==null?"var(--ink-3)":r.storeRoas>=330?"var(--good)":r.storeRoas>=100?"var(--warn)":"var(--bad)";
+    h+=`<tr><td class="name">${esc(r.channel)}</td><td class="r num">${won(r.spend)}</td><td class="r num">${won(r.storeRevenue)}</td>
+      <td class="r num" style="font-weight:800;color:${rc}">${r.storeRoas==null?"—":r.storeRoas+"%"}</td></tr>`});
+  h+=`</tbody></table></div>`;
+  h+=`<div class="tiny" style="margin-top:6px;color:var(--ink-3)">※ <b>라스트클릭</b>(마지막 유입) 기준 스마트스토어 실결제 — 검색광고 API ROAS(클릭귀속, 위 인사이트)와 관점이 다릅니다. 광고 클릭 후 나중에 직접 재방문해 사면 여기선 직유입으로 빠져 보수적입니다. 브랜드검색은 정액제라 광고비 미집계.</div>`;
+  return h;}
 function renderReport(){
   const el=document.getElementById("p-report"), na=D["naver-ads"];
   if(!na||!na.days){el.innerHTML=`<div class="h1">일일 리포트</div>`+briefingHTML()+empty("naver-ads.json 을 불러오지 못했습니다.");return}
@@ -751,6 +763,7 @@ function renderReport(){
     +repCard("검색광고 보고서","search","네이버 검색광고 공식 API(/stats) · 쇼핑검색 기준 · 브랜드검색(정액제) 제외 · 파워링크는 파워링크 탭")
     +repCard("디스플레이광고 보고서","display","광고주센터 성과 보고서(reportPerformance) · 애드부스트 · 48시간 소급 반영 후 D-2 확정")
     +`</div>`;
+  h+=storeAttrHTML();
   h+=insSection("통합 · 주요 인사이트",genInsights(na.days,null));
   h+=loweffHTML();
   h+=insSection("검색광고 보고서 · 주요 인사이트",genInsights(na.days,"search"));
