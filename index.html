@@ -299,7 +299,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint"];
 const D={}; let WIN=7;
 
 /* ---------- utils ---------- */
@@ -501,6 +501,27 @@ function renderShopping(){
   const ch=groupsByChannel(dw).search;
   let h=`<div class="h1">쇼핑검색 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">검색광고 · 상품</span></div>
     <div class="sub">지금 상황 · 할 일 — 최근 ${WIN}일 기준</div>`;
+  // ── 330% 스프린트 추적 ──
+  const sprint=D["shopping-sprint"];
+  if(sprint){
+    const goal=sprint.goal||330, base=(sprint.baseline||{}).roas;
+    const cur=ch?roas(ch.convRevenue,ch.spend):null;
+    const series=daysWindow(na&&na.days?na.days:[],14).map(d=>{const c=groupsByChannel([d]).search;return c&&c.spend?roas(c.convRevenue,c.spend):null}).filter(v=>v!=null);
+    const pct=cur!=null?Math.max(3,Math.min(100,Math.round(cur/goal*100))):0;
+    const okCls=cur!=null&&cur>=goal?"good":"warn";
+    h+=`<div class="card" style="border-left:3px solid var(--accent);margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="font-weight:800;font-size:15px">🎯 쇼핑검색 ${goal}% 스프린트</div>
+        <span class="tag">${fmtDate(sprint.startDate)} → ${fmtDate(sprint.targetDate)} · 예산 30만 고정</span></div>
+      <div style="display:flex;gap:18px;align-items:baseline;margin:10px 0 4px">
+        <div><span style="font-size:28px;font-weight:800;color:var(--${okCls})">${cur!=null?cur+"%":"—"}</span> <span class="tiny">현재(${WIN}일)</span></div>
+        <div class="tiny">시작 ${base!=null?base+"%":"—"} · 목표 ${goal}%</div></div>
+      <div style="height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin:6px 0 10px"><div style="height:100%;width:${pct}%;background:var(--${okCls})"></div></div>
+      ${series.length?`<div class="tiny" style="margin-bottom:4px">일별 ROAS 추이(14일)</div>${spark(series,"var(--accent)")}`:""}
+      ${sprint.note?`<div class="meta" style="margin-top:8px"><b>냉정한 진단</b> ${esc(sprint.note)}</div>`:""}
+      ${sprint.actions&&sprint.actions.length?`<div class="tiny" style="margin:10px 0 4px;font-weight:700">조치 이력</div><div class="tl">${sprint.actions.map(a=>`<div class="it"><div class="dt">${fmtDate(a.date)}</div><div class="wt"><span class="cat">${esc(a.cat||"")}</span>${esc(a.what||"")}</div>${a.detail?`<div class="de">${esc(a.detail)}</div>`:""}</div>`).join("")}</div>`:""}
+    </div>`;
+  }
   h+=`<div class="section-t">지금 상황</div>`;
   if(ch){const cls=effClass(ch.convRevenue,ch.spend,ch.purchaseConv);
     h+=`<div class="grid g4">
