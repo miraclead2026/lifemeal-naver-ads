@@ -770,6 +770,14 @@ const byDate=(a,b)=>a.date<b.date?-1:1;
 function chSum(days,channel){const t={spend:0,convRevenue:0,purchaseConv:0,clicks:0,impressions:0};
   days.forEach(d=>(d.groups||[]).forEach(g=>{if(channel&&g.channel!==channel)return;["spend","convRevenue","purchaseConv","clicks","impressions"].forEach(k=>t[k]+=(g[k]||0))}));return t}
 const chLabel=c=>({display:"애드부스트",search:"쇼핑검색"})[c]||c||"";
+// ★그룹 단위 채널 라벨 — search 채널은 파워링크(상품전체#1)와 쇼핑검색((김현수)쇼핑 검색 광고)이 섞여 있어
+//   campaignName 으로 구분해야 함(chLabel 은 search→쇼핑검색 고정이라 파워링크를 오표기).
+function grpLabel(g){
+  if(!g)return"";
+  if(g.channel==="display")return displaySub(g.campaignName);
+  if(g.channel==="search"){const n=g.campaignName||"";
+    return (n.includes("상품전체")||n.includes("파워링크")||n.includes("사이트검색"))?"파워링크":"쇼핑검색";}
+  return chLabel(g.channel);}
 function genInsights(days,channel){
   const s=[...days].sort(byDate), l=s.slice(-7), pv=s.slice(-14,-7);
   const t=chSum(l,channel), p=chSum(pv,channel), out=[];
@@ -788,12 +796,12 @@ function genInsights(days,channel){
   const scale=conv.filter(g=>roas(g.convRevenue,g.spend)>=400 && g.spend<=Math.max(med,50000))
                   .sort((a,b)=>roas(b.convRevenue,b.spend)-roas(a.convRevenue,a.spend));
   if(scale.length){const g=scale[0],rr=roas(g.convRevenue,g.spend);
-    out.push({level:"good",text:`💡 <b>증액 기회</b> · ${esc(g.adGroupName||"-")} <span class="muted">(${chLabel(g.channel)})</span> ROAS <b>${rr}%</b>인데 광고비 ${won(g.spend)}뿐`,
+    out.push({level:"good",text:`💡 <b>증액 기회</b> · ${esc(g.adGroupName||"-")} <span class="muted">(${grpLabel(g)})</span> ROAS <b>${rr}%</b>인데 광고비 ${won(g.spend)}뿐`,
       mt:`→ 예산·입찰을 올리면 330 유지하며 매출↑ 여지 큼${g.spend<10000?" (표본 작아 점진 증액)":""}`});}
   // 개선 = 저ROAS + 지출 있음
   const low=conv.filter(g=>roas(g.convRevenue,g.spend)<330 && g.spend>=10000).sort((a,b)=>b.spend-a.spend);
   if(low.length){const g=low[0];
-    out.push({level:"warn",text:`🔧 <b>개선</b> · ${esc(g.adGroupName||"-")} <span class="muted">(${chLabel(g.channel)})</span> ROAS <b>${roas(g.convRevenue,g.spend)}%</b> · 광고비 ${won(g.spend)}`,
+    out.push({level:"warn",text:`🔧 <b>개선</b> · ${esc(g.adGroupName||"-")} <span class="muted">(${grpLabel(g)})</span> ROAS <b>${roas(g.convRevenue,g.spend)}%</b> · 광고비 ${won(g.spend)}`,
       mt:`→ 저효율 상품·키워드 정리, 입찰 조정으로 330부터 회복`});}
   // 점검 = 전환0 낭비
   const zero=grp.filter(g=>g.purchaseConv===0&&g.spend>=1000).sort((a,b)=>b.spend-a.spend);
@@ -820,7 +828,7 @@ function loweffHTML(){
   const exBadge={approve:pill("bad","승인 필요"),watch:pill("warn","관측"),human:pill("idle","사용자 화면"),auto:pill("good","자동")};
   let h=`<div class="section-t">저효율 조치 <span class="tag">진단 → 실제 항목 → 조치안 → 실행</span></div>`;
   h+=`<div class="card block" style="padding:16px 18px"><div class="tiny" style="color:var(--ink-2);line-height:1.6">
-    목표 <b>ROAS 330 유지하며 매출 최대화</b> — 저효율부터 정리. 쇼핑은 최저입찰(50원)이라 입찰레버가 없어 조치 = <b>상품 광고 OFF·제외검색어</b>(매출 영향 → 승인). 파워링크는 <b>자동 입찰조정</b> 중.</div>`;
+    목표 <b>ROAS 330 유지하며 매출 최대화</b> — 저효율부터 정리. 쇼핑검색은 <b>수동입찰 전환(8/22)</b> 후 입찰이 레버 — 고ROAS 소재 <b>입찰↑</b>, 저효율은 <b>입찰↓·상품 OFF·제외검색어</b>(매출 영향 → 승인). 파워링크는 <b>자동 입찰조정</b> 중.</div>`;
   if(lw.powerlinkAuto&&lw.powerlinkAuto.changed)
     h+=`<div class="insight good" style="padding:8px 0"><span class="ic"></span><div><div class="tx">파워링크 저효율 키워드 <b>자동 조치 중</b> — ${esc(lw.powerlinkAuto.date||"")} 입찰 ${lw.powerlinkAuto.changed}키 조정(인하 ${lw.powerlinkAuto.downs||0}) <span class="muted">자동 실행·매일 기록</span></div></div></div>`;
   h+=`</div>`;
