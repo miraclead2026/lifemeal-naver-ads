@@ -43,6 +43,11 @@ header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--surfa
 .seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-weight:700;font-size:12.5px;
   padding:5px 12px;border-radius:7px;cursor:pointer}
 .seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.pernav{display:inline-flex;align-items:center;gap:4px}
+.pernav button{width:26px;height:26px;border:1px solid var(--border);background:var(--surface);color:var(--ink-2);border-radius:8px;cursor:pointer;font-size:15px;font-weight:800;line-height:1;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.pernav button:hover:not(:disabled){color:var(--ink);border-color:var(--accent)}
+.pernav button:disabled{opacity:.35;cursor:default}
+.perlabel{min-width:96px;text-align:center;font-size:12.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
 nav.tabs{max-width:1180px;margin:0 auto;padding:0 12px;display:flex;gap:2px;overflow-x:auto}
 nav.tabs a{padding:11px 15px 13px;font-weight:700;font-size:14px;color:var(--ink-3);border-bottom:2px solid transparent;
   white-space:nowrap;cursor:pointer;text-decoration:none;transition:color .12s}
@@ -259,6 +264,11 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
         <button data-m="month">월별</button>
         <button data-m="custom">기간</button>
       </div>
+      <div class="pernav" id="pernav">
+        <button id="pprev" title="이전 기간" aria-label="이전 기간">‹</button>
+        <span id="perlabel" class="perlabel">—</span>
+        <button id="pnext" title="다음 기간" aria-label="다음 기간">›</button>
+      </div>
       <span id="daterange" style="display:none;align-items:center;gap:5px;font-size:12px">
         <input type="date" id="dstart" style="font-size:12px;padding:3px 6px;border-radius:7px;border:1px solid var(--line);background:var(--card);color:var(--ink)">
         <span>~</span>
@@ -311,15 +321,22 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
 const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution","powerlink-searchterms","ad-extensions"];
 const D={}; let WIN=7;
-/* 기간 선택(홈 KPI·채널현황 전용): 일별=1 / 주별=7 / 월별=30 / 기간=커스텀 */
-let PMODE="week", PSTART=null, PEND=null;
+/* ── 통합 기간 컨트롤 — 일/주/월/기간 + 좌우이동(POFF). 전 페이지가 이 창(curDays)을 공유한다.
+     POFF=0 최신, +1 한 기간 과거. WIN=PDAYS[PMODE] (구코드 호환용, 오프셋 미반영 피드용). ── */
+let PMODE="week", POFF=0, PSTART=null, PEND=null;
 const PDAYS={day:1,week:7,month:30};
-function periodDays(days){const s=[...(days||[])].sort(byDate);
+function periodDays(days){const s=[...(days||[])].sort((a,b)=>a.date<b.date?-1:1);
   if(PMODE==="custom"&&PSTART&&PEND)return s.filter(d=>d.date>=PSTART&&d.date<=PEND);
-  return s.slice(-(PDAYS[PMODE]||7));}
-function periodLabel(){const m={day:"일별",week:"주별(7일)",month:"월별(30일)"};
-  if(PMODE==="custom"&&PSTART&&PEND)return `${fmtDate(PSTART)}~${fmtDate(PEND)}`;
-  return m[PMODE]||"주별";}
+  const len=PDAYS[PMODE]||7, end=s.length-POFF*len, start=Math.max(0,end-len);
+  return end<=0?[]:s.slice(start,end);}
+function naDays(){return (D["naver-ads"]&&D["naver-ads"].days)||[];}
+function curDays(){return periodDays(naDays());}      /* ★전 페이지 공유 창 */
+function modeLabel(){return {day:"일별",week:"주별",month:"월별",custom:"기간"}[PMODE]||"주별";}
+function rangeLabel(dw){dw=(dw||curDays());if(!dw||!dw.length)return"데이터 없음";
+  const a=fmtDate(dw[0].date),b=fmtDate(dw.at(-1).date);return a===b?a:`${a}~${b}`;}
+function periodLabel(){return modeLabel();}            /* 호환: 짧은 모드명 */
+function canOlder(){const n=naDays().length,len=PDAYS[PMODE]||7;return PMODE!=="custom"&&(POFF+1)*len<n;}
+function canNewer(){return PMODE!=="custom"&&POFF>0;}
 
 /* ---------- utils ---------- */
 const won=n=>n==null?"—":"₩"+Math.round(n).toLocaleString("ko-KR");
@@ -384,6 +401,13 @@ function aggDisplaySub(dw){const m={};
     const k=displaySub(g.campaignName);if(!m[k])m[k]={name:k,spend:0,convRevenue:0,purchaseConv:0};
     m[k].spend+=(g.spend||0);m[k].convRevenue+=(g.convRevenue||0);m[k].purchaseConv+=(g.purchaseConv||0);}));
   return m;}
+// ★검색 채널을 파워링크(상품전체#1)와 쇼핑검색으로 분리 — campaignName 기준(chLabel은 search→쇼핑검색 고정이라 오표기).
+function searchSub(cn){const n=cn||"";return (n.includes("상품전체")||n.includes("파워링크")||n.includes("사이트검색"))?"파워링크":"쇼핑검색";}
+function aggSearchSub(dw){const m={};
+  dw.forEach(d=>(d.groups||[]).filter(g=>g.channel==="search").forEach(g=>{
+    const k=searchSub(g.campaignName);if(!m[k])m[k]={name:k,spend:0,convRevenue:0,purchaseConv:0};
+    m[k].spend+=(g.spend||0);m[k].convRevenue+=(g.convRevenue||0);m[k].purchaseConv+=(g.purchaseConv||0);}));
+  return m;}
 function stageCard(name,em,stage,latest){
   return `<div class="card block"><h4>${esc(name)} <span class="tiny" style="font-weight:600;color:var(--ink-3)">${esc(em)}</span></h4>
     <div style="font-size:13.5px;font-weight:700;color:var(--accent);margin:7px 0 4px">▶ ${esc(stage)}</div>
@@ -417,16 +441,16 @@ function renderHome(){
       ${kpi("전환 수",cnt(t.purchaseConv,"int","건"),`클릭 ${numf(t.clicks)} · 노출 ${numf(t.impressions)}`)}
     </div>`;
 
-  // 채널별 현황 — 디스플레이 하위(애드부스트쇼핑·카탈로그·성과형) 분리 + 쇼핑검색 + 파워링크
-  h+=`<div class="section-t">채널별 현황 <span class="tag">디스플레이·쇼핑검색=${periodLabel()} · 파워링크=28일</span></div><div class="grid g3">`;
+  // 채널별 현황 — 디스플레이 하위(애드부스트쇼핑·카탈로그·성과형) + 검색 하위(쇼핑검색·파워링크) 전부 같은 창(dw)
+  const ssub=aggSearchSub(dw);
+  const plKw=pl&&pl.subLines?pl.subLines.reduce((a,s)=>a+(s.keywordCount||0),0):0;
+  h+=`<div class="section-t">채널별 현황 <span class="tag">${modeLabel()} <b>${rangeLabel(dw)}</b> · 전 채널 동일 기간</span></div><div class="grid g3">`;
   [["애드부스트쇼핑","디스플레이 · 애드부스트"],["카탈로그","디스플레이 · 리타겟"],["성과형","디스플레이 · 웹전환"]].forEach(([k,em])=>{
     const g=dsub[k];if(!g||g.spend<=0)return;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
     h+=channelCard(k,em,g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1));});
-  if(ch.search){const g=ch.search;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
-    h+=channelCard("쇼핑검색","검색광고",g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1));}
-  if(pl&&pl.subLines){const ps=pl.subLines.reduce((a,s)=>({spend:a.spend+(s.spend28||0),rev:a.rev+(s.convRevenue28||0),conv:a.conv+(s.purchaseConv28||0),kw:a.kw+(s.keywordCount||0)}),{spend:0,rev:0,conv:0,kw:0});
-    const cls=effClass(ps.rev,ps.spend,ps.conv);
-    h+=channelCard("파워링크","검색광고 · 28일",ps.spend,ps.rev,ps.conv,cls,ps.spend/(t.spend||1),`키워드 ${numf(ps.kw)}개`);}
+  [["쇼핑검색","검색광고 · 쇼핑",""],["파워링크","검색광고 · 키워드",plKw?`키워드 ${numf(plKw)}개`:""]].forEach(([k,em,extra])=>{
+    const g=ssub[k];if(!g||g.spend<=0)return;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
+    h+=channelCard(k,em,g.spend,g.convRevenue,g.purchaseConv,cls,g.spend/(t.spend||1),extra);});
   h+=`</div>`;
 
   // 지금 돌아가는 광고 → 채널별 현재 실행 단계
@@ -541,10 +565,10 @@ function renderPowerlink(){
 function renderShopping(){
   const el=document.getElementById("p-shopping");
   const na=D["naver-ads"], sp=D["shopping-proposals"];
-  const dw=na&&na.days?daysWindow(na.days,WIN):[];
+  const dw=na&&na.days?curDays():[];
   const ch=groupsByChannel(dw).search;
   let h=`<div class="h1">쇼핑검색 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">검색광고 · 상품</span></div>
-    <div class="sub">지금 상황 · 할 일 — 최근 ${WIN}일 기준</div>`;
+    <div class="sub">지금 상황 · 할 일 — ${modeLabel()} <b>${rangeLabel(dw)}</b> 기준</div>`;
   // ── 330% 스프린트 추적 ──
   const sprint=D["shopping-sprint"];
   if(sprint){
@@ -558,7 +582,7 @@ function renderShopping(){
         <div style="font-weight:800;font-size:15px">🎯 쇼핑검색 ${goal}% 스프린트</div>
         <span class="tag">${fmtDate(sprint.startDate)} → ${fmtDate(sprint.targetDate)} · 예산 30만 고정</span></div>
       <div style="display:flex;gap:18px;align-items:baseline;margin:10px 0 4px">
-        <div><span style="font-size:28px;font-weight:800;color:var(--${okCls})">${cur!=null?cur+"%":"—"}</span> <span class="tiny">현재(${WIN}일)</span></div>
+        <div><span style="font-size:28px;font-weight:800;color:var(--${okCls})">${cur!=null?cur+"%":"—"}</span> <span class="tiny">현재(${rangeLabel(dw)})</span></div>
         <div class="tiny">시작 ${base!=null?base+"%":"—"} · 목표 ${goal}%</div></div>
       <div style="height:8px;border-radius:5px;background:var(--line);overflow:hidden;margin:6px 0 10px"><div style="height:100%;width:${pct}%;background:var(--${okCls})"></div></div>
       ${series.length?`<div class="tiny" style="margin-bottom:4px">일별 ROAS 추이(14일)</div>${spark(series,"var(--accent)")}`:""}
@@ -569,7 +593,7 @@ function renderShopping(){
   h+=`<div class="section-t">지금 상황</div>`;
   if(ch){const cls=effClass(ch.convRevenue,ch.spend,ch.purchaseConv);
     h+=`<div class="grid g4">
-      ${kpi("광고비",wonK(ch.spend),`${WIN}일`,"accent")}
+      ${kpi("광고비",wonK(ch.spend),rangeLabel(dw),"accent")}
       ${kpi("전환매출",wonK(ch.convRevenue),"구매 기여")}
       ${kpi("ROAS",roasT(ch.convRevenue,ch.spend),effLabel[cls])}
       ${kpi("전환수",numf(ch.purchaseConv)+"건",`클릭 ${numf(ch.clicks)}`)}</div>`;
@@ -610,21 +634,21 @@ function renderAdvoost(){
     <div class="sub">디스플레이 광고 안에 <b>애드부스트 쇼핑(신규 유입) · 카탈로그(리타겟) · 성과형(웹전환)</b> 3종 — 아래에서 분리해서 봅니다</div>`;
   // 디스플레이 광고 구성 — 애드부스트쇼핑 ≠ 카탈로그 ≠ 성과형 명확 분리
   const na=D["naver-ads"];
-  if(na&&na.days){const dsub=aggDisplaySub(daysWindow(na.days,WIN));
+  if(na&&na.days){const dsub=aggDisplaySub(curDays());
     const order=[["애드부스트쇼핑","애드부스트 쇼핑 (신규 유입)"],["카탈로그","카탈로그 (리타겟)"],["성과형","성과형 (웹전환)"],["테스트","테스트"]];
-    h+=`<div class="section-t">디스플레이 광고 구성 <span class="tag">최근 ${WIN}일 · 애드부스트쇼핑 ≠ 카탈로그</span></div><div class="card"><table><thead><tr><th>유형</th><th class="r">광고비</th><th class="r">전환</th><th class="r">전환매출</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
+    h+=`<div class="section-t">디스플레이 광고 구성 <span class="tag">${rangeLabel()} · 애드부스트쇼핑 ≠ 카탈로그</span></div><div class="card"><table><thead><tr><th>유형</th><th class="r">광고비</th><th class="r">전환</th><th class="r">전환매출</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
     let any=false;
     order.forEach(([k,label])=>{const g=dsub[k];if(!g||g.spend<=0)return;any=true;const cls=effClass(g.convRevenue,g.spend,g.purchaseConv);
       h+=`<tr><td class="name">${esc(label)}</td><td class="r num">${won(g.spend)}</td><td class="r num">${numf(g.purchaseConv)}</td><td class="r num">${won(g.convRevenue)}</td><td class="r num" style="font-weight:800;color:var(--${cls==='idle'?'ink-3':cls})">${roasT(g.convRevenue,g.spend)}</td><td>${pill(cls,effLabel[cls])}</td></tr>`;});
     if(!any)h+=`<tr><td colspan="6" class="empty">디스플레이 집행 데이터 없음</td></tr>`;
     h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">애드부스트 쇼핑 = 디스플레이 안의 쇼핑 자동광고(신규 유입) · 카탈로그 = 상품 카탈로그 리타겟 — 별개 광고라 따로 봅니다.</div>`;
     // 장바구니 이탈 · 리타겟 기회 (성과보고서 cart 지표, 신규 수집)
-    const dw2=daysWindow(na.days,WIN);
+    const dw2=curDays();
     let cc=0,cr=0,pc=0,pr=0; const cprod={};
     dw2.forEach(d=>(d.groups||[]).forEach(g=>{if(g.channel==="display"){cc+=g.cartConv||0;cr+=g.cartRevenue||0;pc+=g.purchaseConv||0;pr+=g.convRevenue||0}}));
     dw2.forEach(d=>(d.products||[]).forEach(p=>{if(p.channel==="display"&&(p.cartRevenue||0)>0){const k=p.groupName||p.name;const s=cprod[k]||(cprod[k]={name:k,cart:0,pur:0});s.cart+=p.cartRevenue||0;s.pur+=p.convRevenue||0}}));
     if(cc>0){const crows=Object.values(cprod).sort((a,b)=>(b.cart-b.pur)-(a.cart-a.pur)).slice(0,8);
-      h+=`<div class="section-t">장바구니 이탈 · 리타겟 기회 <span class="tag">최근 ${WIN}일 · 담고 안 산 잠재</span></div><div class="grid g4">
+      h+=`<div class="section-t">장바구니 이탈 · 리타겟 기회 <span class="tag">${rangeLabel()} · 담고 안 산 잠재</span></div><div class="grid g4">
         ${kpi("장바구니 담김",wonK(cr),numf(cc)+"건","accent")}
         ${kpi("구매완료",wonK(pr),numf(pc)+"건")}
         ${kpi("이탈 잠재",wonK(Math.max(0,cr-pr)),"카탈로그 회수 대상")}
@@ -899,11 +923,11 @@ function demoBlock(title,rows){const mx=Math.max(...rows.map(r=>r[1]));
 function renderProducts(){
   const el=document.getElementById("p-products"),na=D["naver-ads"],st=D["ads-strategy"];
   if(!na||!na.days){el.innerHTML=`<div class="h1">상품·세분화</div>`+empty("naver-ads.json 대기");return}
-  const dw=daysWindow(na.days,WIN),prods=aggProducts(dw).filter(p=>p.spend>0).sort((a,b)=>b.spend-a.spend);
-  let h=`<div class="h1">상품·세분화</div><div class="sub">세분화 판단을 위한 상품군별 성과 — 최근 ${WIN}일 · 상품군(그룹) 통합 단위</div>`;
+  const dw=curDays(),prods=aggProducts(dw).filter(p=>p.spend>0).sort((a,b)=>b.spend-a.spend);
+  let h=`<div class="h1">상품·세분화</div><div class="sub">세분화 판단을 위한 상품군별 성과 — ${modeLabel()} <b>${rangeLabel(dw)}</b> · 상품군(그룹) 통합 단위</div>`;
   h+=`<div class="section-t">상품별 성과 매트릭스 <span class="tag">${prods.length}개 · 지출순</span></div>
     <div class="card"><table><thead><tr><th>상품군</th><th>채널</th><th class="r">광고비</th><th class="r">전환</th><th class="r">전환매출</th><th class="r">ROAS</th><th>효율</th></tr></thead><tbody>`;
-  if(!prods.length)h+=`<tr><td colspan="7" class="empty">최근 ${WIN}일 집행 상품 없음</td></tr>`;
+  if(!prods.length)h+=`<tr><td colspan="7" class="empty">${rangeLabel(dw)} 집행 상품 없음</td></tr>`;
   prods.slice(0,18).forEach(p=>{const cls=effClass(p.convRevenue,p.spend,p.purchaseConv);
     h+=`<tr><td class="name">${esc(p.name)}</td><td>${Object.keys(p.channels).map(chBadge).join(" ")}</td>
       <td class="r num">${won(p.spend)}</td><td class="r num">${numf(p.purchaseConv)}</td><td class="r num">${won(p.convRevenue)}</td>
@@ -932,8 +956,8 @@ function renderBranded(){
   const bkw=((dict&&dict.keywords)||[]).filter(k=>k.type==="브랜드검색");
   let h=`<div class="h1">브랜드검색</div><div class="sub">네이버에 '라이프밀' 검색 시 노출되는 브랜드검색광고 — 정액제 · 성과 + PC/모바일 화면</div>`;
   // 성과 (실데이터)
-  if(bs&&bs.windows){const w=bs.windows[String(WIN)]||bs.windows["7"];
-    h+=`<div class="section-t">브랜드검색 성과 <span class="tag">최근 ${WIN}일 · 실데이터 · 정액제</span></div>
+  if(bs&&bs.windows){const wkey=bs.windows[String(WIN)]?String(WIN):(bs.windows["7"]?"7":Object.keys(bs.windows)[0]);const w=bs.windows[wkey];
+    h+=`<div class="section-t">브랜드검색 성과 <span class="tag">최근 ${wkey}일 · 실데이터 · 정액제</span></div>
       <div class="grid g4">
         ${kpi("노출",cnt(w.imp,"int"),`CTR ${w.ctr}%`,"accent")}
         ${kpi("클릭",cnt(w.clk,"int"),"브랜드 검색 유입")}
@@ -1006,6 +1030,7 @@ function renderAll(){renderHome();renderReport();renderPowerlink();renderShoppin
   document.getElementById("fresh").innerHTML=latest?`데이터 기준 <b>${esc(latest)}</b>`:`<span class="err">데이터 로드 실패</span>`;
   animatePage(document.querySelector(".page.on"));
   if(typeof updateCopybar==="function")updateCopybar();
+  if(typeof updatePerNav==="function")updatePerNav();
 }
 async function load(){
   await Promise.all(FEEDS.map(async f=>{try{const r=await fetch(BASE+f+".json",{cache:"no-store"});if(r.ok)D[f]=await r.json()}catch(e){}}));
@@ -1017,13 +1042,23 @@ document.getElementById("tabs").addEventListener("click",e=>{const a=e.target.cl
   document.querySelectorAll(".page").forEach(s=>s.classList.toggle("on",s.id==="p-"+p));
   animatePage(document.getElementById("p-"+p));
   history.replaceState(null,"","#"+p);window.scrollTo(0,0)});
-// 기간 선택 (홈 KPI·채널현황)
+// ── 통합 기간 컨트롤 (전 페이지 공유) ──
+function updatePerNav(){
+  const nav=document.getElementById("pernav"), lab=document.getElementById("perlabel");
+  const prev=document.getElementById("pprev"), next=document.getElementById("pnext");
+  if(PMODE==="custom"){nav.style.display="none";return;}
+  nav.style.display="inline-flex";
+  lab.textContent=rangeLabel();
+  prev.disabled=!canOlder(); next.disabled=!canNewer();
+}
 document.getElementById("period").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
-  PMODE=b.dataset.m;document.querySelectorAll("#period button").forEach(x=>x.classList.toggle("on",x===b));
+  PMODE=b.dataset.m;POFF=0;document.querySelectorAll("#period button").forEach(x=>x.classList.toggle("on",x===b));
   const dr=document.getElementById("daterange");dr.style.display=PMODE==="custom"?"inline-flex":"none";
-  if(PMODE!=="custom"){WIN=PDAYS[PMODE]||7;renderAll();}});
+  if(PMODE!=="custom"){WIN=PDAYS[PMODE]||7;updatePerNav();renderAll();}else{updatePerNav();}});
+document.getElementById("pprev").addEventListener("click",()=>{if(canOlder()){POFF++;updatePerNav();renderAll();}});
+document.getElementById("pnext").addEventListener("click",()=>{if(canNewer()){POFF--;updatePerNav();renderAll();}});
 function applyCustom(){const s=document.getElementById("dstart").value,en=document.getElementById("dend").value;
-  if(s&&en){PSTART=s;PEND=en;PMODE="custom";renderAll();}}
+  if(s&&en){PSTART=s;PEND=en;PMODE="custom";POFF=0;updatePerNav();renderAll();}}
 document.getElementById("dstart").addEventListener("change",applyCustom);
 document.getElementById("dend").addEventListener("change",applyCustom);
 // 체크 → 조치 메시지 복사 (Firebase 대신 붙여넣기 승인)
