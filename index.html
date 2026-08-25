@@ -641,19 +641,27 @@ function renderAdvoost(){
       h+=`<div class="tiny" style="margin-top:6px;color:var(--ink-3)">🔁 ${esc(st.loop||"")}</div></div>`;}
     h+=`<div class="grid g4">
       ${kpi("전체 상품",pa.totalItems+"개",wonK(pa.totalSpend)+" 지출")}
-      ${kpi("적자 제외 대상",pa.excludeCount+"개",wonK(pa.excludeSpend)+" ("+Math.round(pa.excludeSpend/pa.totalSpend*100)+"%)","warn")}
-      ${kpi("제외 후 남음",pa.keepCount+"개","흑자만","good")}
-      ${kpi("제외 규칙","<100%",esc(pa.excludeRule||""))}</div>`;
-    if(pa.excludeIds){h+=`<div class="card" style="margin-top:12px;background:var(--warn-bg);border-color:var(--warn)">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-        <div><b>적자 상품 ${pa.excludeCount}개 제외 ID</b> <span class="tiny">— ADVoost 애셋그룹 [수정] &gt; 아이템 세트 &gt; '일부 아이템' &gt; <b>제외</b>에 붙여넣기(포함 아님!)</span></div>
-        <button class="copybtn" onclick="copyIds(this)" data-ids="${esc(pa.excludeIds)}">📋 상품ID ${pa.excludeCount}개 복사</button>
-      </div>
-      <textarea readonly class="idbox" onclick="this.select()">${esc(pa.excludeIds)}</textarea>
-      <div class="tiny" style="color:var(--ink-3)">붙여넣기 후 상품수 <b>${pa.keepCount}개</b> 유지되는지 확인(다르면 되돌리기). 실구매ROAS&lt;100%&amp;지출&gt;0 = 표기ROAS 착시로 계속 노출되나 실구매 거의 0인 상품.</div></div>`;}
-    if(pa.excludeList&&pa.excludeList.length){h+=`<div class="card" style="margin-top:10px"><table><thead><tr><th>상품</th><th>상품ID</th><th class="r">지출</th><th class="r">실구매ROAS</th><th class="r">구매</th></tr></thead><tbody>`;
+      ${kpi("새 제외 대상",pa.excludeCount+"개",pa.excludeCount?wonK(pa.excludeSpend):"없음",pa.excludeCount?"warn":"good")}
+      ${kpi("이미 제외",(pa.excludedCount||0)+"개",pa.excludedAt?esc(pa.excludedAt)+" 관측중":"—")}
+      ${kpi("돌리는 상품",pa.keepCount+"개","흑자만","good")}</div>`;
+    if(pa.excludeCount>0){
+      h+=`<div class="card" style="margin-top:12px;background:var(--warn-bg);border-color:var(--warn)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div><b>새 적자 ${pa.excludeCount}개 제외 ID</b> <span class="tiny">— ADVoost 애셋그룹 [수정] &gt; 아이템 세트 &gt; '일부 아이템' &gt; <b>제외</b>에 붙여넣기(포함 아님!)</span></div>
+          <button class="copybtn" onclick="copyIds(this)" data-ids="${esc(pa.excludeIds)}">📋 상품ID ${pa.excludeCount}개 복사</button>
+        </div>
+        <textarea readonly class="idbox" onclick="this.select()">${esc(pa.excludeIds)}</textarea>
+        <div class="tiny" style="color:var(--ink-3)">제외 후 상품수 <b>${pa.keepCount}개</b> 유지 확인(다르면 되돌리기). 실구매ROAS&lt;100%&amp;지출&gt;0 = 표기ROAS 착시로 계속 노출되나 실구매 거의 0.</div></div>`;
+      h+=`<div class="card" style="margin-top:10px"><table><thead><tr><th>상품</th><th>상품ID</th><th class="r">지출</th><th class="r">실구매ROAS</th><th class="r">구매</th></tr></thead><tbody>`;
       pa.excludeList.forEach(i=>h+=`<tr><td class="name">${esc(i.name)}</td><td class="tiny num">${esc(i.pid)}</td><td class="r num">${won(i.spend)}</td><td class="r num" style="color:var(--warn);font-weight:800">${i.buyRoas}%</td><td class="r num">${numf(i.buy)}</td></tr>`);
-      h+=`</tbody></table></div>`;}
+      h+=`</tbody></table></div>`;
+    } else {
+      h+=`<div class="card" style="margin-top:12px;background:var(--good-bg);border-color:var(--good)">
+        <b style="color:var(--good)">✅ 적자 제외 완료</b> <span class="tiny">새로 뺄 적자 없음${pa.excludedCount?` · ${pa.excludedCount}개 제외됨`+(pa.excludedAt?`(${esc(pa.excludedAt)})`:""):""} — 효과 관측 중. 2주 뒤 <b>예산 증액(3단계)</b> + 새 적자 재점검(데이터가 매일 자동 갱신되니 새 적자 생기면 위에 복사 버튼이 다시 뜹니다).</span></div>`;
+      if(pa.excludedList&&pa.excludedList.length){h+=`<details style="margin-top:8px"><summary class="tiny" style="cursor:pointer;color:var(--ink-3)">이미 제외한 ${pa.excludedCount}개 보기(관측중)</summary><div class="card" style="margin-top:6px"><table><thead><tr><th>상품</th><th class="r">지출</th><th class="r">실구매ROAS</th></tr></thead><tbody>`;
+        pa.excludedList.forEach(i=>h+=`<tr><td class="name">${esc(i.name)}</td><td class="r num">${won(i.spend)}</td><td class="r num">${i.buyRoas}%</td></tr>`);
+        h+=`</tbody></table></div></details>`;}
+    }
   }
   // 할 일: 문제 + 계획
   h+=`<div class="grid g2"><div><div class="section-t">문제점</div><div class="card block">`;
