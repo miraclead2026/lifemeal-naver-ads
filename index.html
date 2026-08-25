@@ -309,7 +309,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution","powerlink-searchterms"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution","powerlink-searchterms","ad-extensions"];
 const D={}; let WIN=7;
 /* 기간 선택(홈 KPI·채널현황 전용): 일별=1 / 주별=7 / 월별=30 / 기간=커스텀 */
 let PMODE="week", PSTART=null, PEND=null;
@@ -496,6 +496,17 @@ function renderPowerlink(){
     <div><div class="l">최근 입찰조정</div><div class="v num">${bidChanged==null?"—":bidChanged+"키"}</div></div>
     <div><div class="l">반려 · 수동검토</div><div class="v num">${rejSum?rejSum.total+" · "+rejSum.manualReview:"—"}</div></div>
     <div><div class="l">자동 제외 누적</div><div class="v num">${rejSum?rejSum.autoExcluded:"—"}</div></div></div>`;
+
+  // 확장소재 현황 — 지금 뭐가 돌고 있나 (유니 요청: 어떤 확장소재가 도는지 화면에서 확인)
+  const ext=D["ad-extensions"];
+  if(ext&&ext.groups){
+    h+=`<div class="section-t">확장소재 현황 <span class="tag">지금 돌고 있는 것 · 총 ${ext.totalExtensions}건 · 진행중 ${ext.activeExtensions}</span></div>`;
+    h+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">`+Object.entries(ext.typeCounts||{}).map(([t,n])=>`<span class="pill accent">${esc(t)} ${n}</span>`).join("")+`</div>`;
+    h+=`<div class="card"><table><thead><tr><th>그룹</th><th>유형</th><th>내용</th><th>상태</th></tr></thead><tbody>`;
+    ext.groups.forEach(g=>{(g.extensions||[]).forEach((e,i)=>{
+      h+=`<tr${e.on?"":' style="opacity:.45"'}><td class="name">${i===0?esc(g.group):""}</td><td class="tiny">${esc(e.type)}</td><td>${esc(e.content)}</td><td>${e.on?pill("good","진행중"):pill("idle",esc(e.status==="승인"?"승인·OFF":e.status))}</td></tr>`;});});
+    h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">진행중=승인+노출ON · 흐리게=승인됐지만 OFF(userLock). 홍보문구·추가제목·이미지 등이 광고 아래 붙어 클릭률을 올립니다. 매일 자동 갱신.</div>`;
+  }
 
   // 반려 수동검토
   if(rej&&rej.manualReview){
