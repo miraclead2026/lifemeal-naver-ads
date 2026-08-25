@@ -319,7 +319,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
 
 <script>
 const BASE="https://raw.githubusercontent.com/miraclead2026/lifemeal-dashboard/main/data/";
-const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution","powerlink-searchterms","ad-extensions"];
+const FEEDS=["naver-ads","ads-strategy","powerlink-agent","advoost-agent","naver-ads-weekly","bid-log","keyword-additions","keyword-rejections","shopping-proposals","keyword-dictionary-ads","keyword-exclusions","brand-search","ads-briefing","loweff-actions","ads-segmentation","shopping-sprint","store-ad-attribution","powerlink-searchterms","ad-extensions","advoost-budget-watch"];
 const D={}; let WIN=7;
 /* ── 통합 기간 컨트롤 — 일/주/월/기간 + 좌우이동(POFF). 전 페이지가 이 창(curDays)을 공유한다.
      POFF=0 최신, +1 한 기간 과거. WIN=PDAYS[PMODE] (구코드 호환용, 오프셋 미반영 피드용). ── */
@@ -880,6 +880,20 @@ function storeAttrHTML(){
   h+=`</tbody></table></div>`;
   h+=`<div class="tiny" style="margin-top:6px;color:var(--ink-3)">※ <b>라스트클릭</b>(마지막 유입) 기준 스마트스토어 실결제 — 검색광고 API ROAS(클릭귀속, 위 인사이트)와 관점이 다릅니다. 광고 클릭 후 나중에 직접 재방문해 사면 여기선 직유입으로 빠져 보수적입니다. 브랜드검색은 정액제라 광고비 미집계.</div>`;
   return h;}
+function budgetWatchHTML(){const bw=D["advoost-budget-watch"];if(!bw)return"";
+  const cmap={"대기":"idle","유지":"good","관찰":"warn","낮추기":"bad"}, cls=cmap[bw.status]||"idle";
+  const sinceRows=(bw.since||[]).map(r=>`${fmtDate(r.date)} ${r.roas}%${r.provisional?"(잠정)":""}`).join(" · ");
+  return `<div class="card block" style="border-left:3px solid var(--${cls==='idle'?'ink-3':cls});margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <div style="font-weight:800;font-size:15px">🧪 애드부스트 예산 실험 추적</div>${pill(cls,bw.status)}</div>
+    <div class="tiny" style="color:var(--ink-3);margin:4px 0 10px">${esc(bw.change)} · 시행 ${fmtDate(bw.changeDate)}</div>
+    <div class="grid g3">
+      ${kpi("증액 전 (14일 평균)",bw.baselineAvgRoas!=null?bw.baselineAvgRoas+"%":"—",`${bw.baselineMin}~${bw.baselineMax}% · ${wonK(bw.baselineAvgSpend)}/일`)}
+      ${kpi("증액 후",bw.sinceAvgRoas!=null?bw.sinceAvgRoas+"%":"집계 대기",bw.since&&bw.since.length?`${bw.since.length}일 · ${wonK(bw.sinceAvgSpend)}/일`:"내일 첫 확정값")}
+      ${kpi("판정",bw.status,"","accent")}</div>
+    <div class="insight ${cls==='idle'?'info':cls}" style="padding:8px 0;margin-top:8px"><span class="ic"></span><div><div class="tx"><b>${esc(bw.verdict)}</b></div><div class="mt">→ ${esc(bw.action)}</div></div></div>
+    ${sinceRows?`<div class="tiny" style="color:var(--ink-3)">증액 후 일별: ${esc(sinceRows)}</div>`:""}
+    <div class="tiny" style="color:var(--ink-3);margin-top:4px">ⓘ ${esc(bw.note||"")}</div></div>`;}
 function renderReport(){
   const el=document.getElementById("p-report"), na=D["naver-ads"];
   if(!na||!na.days){el.innerHTML=`<div class="h1">일일 리포트</div>`+briefingHTML()+empty("naver-ads.json 을 불러오지 못했습니다.");return}
@@ -897,6 +911,7 @@ function renderReport(){
   let h=`<div class="h1">일일 리포트</div>
     <div class="sub">매일 제가 한 일 보고 + 검색·디스플레이 보고서 수집 현황과 주요 인사이트 — D-2 확정 기준</div>`;
   h+=briefingHTML();
+  h+=budgetWatchHTML();
   h+=`<div class="section-t">리포트 수집 현황 <span class="tag">데이터 기준 ${esc(na.updatedAt||"")}</span></div><div class="grid g2">`
     +repCard("검색광고 보고서","search","네이버 검색광고 공식 API(/stats) · 쇼핑검색 기준 · 브랜드검색(정액제) 제외 · 파워링크는 파워링크 탭")
     +repCard("디스플레이광고 보고서","display","광고주센터 성과 보고서(reportPerformance) · 애드부스트 · 48시간 소급 반영 후 D-2 확정")
