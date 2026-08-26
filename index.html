@@ -283,6 +283,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
     <a data-p="shopping">쇼핑검색</a>
     <a data-p="branded">브랜드검색</a>
     <a data-p="advoost">디스플레이</a>
+    <a data-p="webconv">웹전환</a>
     <a data-p="products">상품·세분화</a>
     <a data-p="dict">키워드 사전</a>
     <a data-p="strategy">세분화 전략</a>
@@ -297,6 +298,7 @@ nav.tabs a .wip{font-size:9px;padding:1px 5px}
   <section class="page" id="p-shopping"></section>
   <section class="page" id="p-branded"></section>
   <section class="page" id="p-advoost"></section>
+  <section class="page" id="p-webconv"></section>
   <section class="page" id="p-products"></section>
   <section class="page" id="p-dict"></section>
   <section class="page" id="p-strategy"></section>
@@ -1039,7 +1041,96 @@ function renderDict(){
 function empty(msg){return `<div class="card"><div class="empty ${msg.includes('못')?'err':''}">${esc(msg)}</div></div>`}
 
 /* ---------- boot ---------- */
-function renderAll(){renderHome();renderReport();renderPowerlink();renderShopping();renderBranded();renderAdvoost();renderProducts();renderDict();renderStrategy();renderWeekly();
+/* ── 웹사이트 전환광고(GFA 성과형 · 수동 리타겟) — API 없음, 집행 소재/타겟은 CRE에서 수기 관리 ── */
+function renderWebconv(){
+  const el=document.getElementById("p-webconv");
+  const CRE={ appeal:"생식 부문 1위", products:"라이프밀 1일1생식 · 라이프밀 데일리",
+    store:"smartstore.naver.com/life_meal", storeUrl:"https://smartstore.naver.com/life_meal",
+    img:"", budget:"10만원 / 일", status:"검수 중" };
+  const INC=[["장바구니",17000],["결제 직전",7000],["상품 찜",1000]];
+  const EXC=[["구매완료",13000]];
+  const incSum=INC.reduce((s,x)=>s+x[1],0);
+
+  let h=`<div class="h1">웹사이트 전환광고 <span style="font-size:13px;font-weight:600;color:var(--ink-3)">GFA 성과형 · 수동 리타겟</span></div>
+    <div class="sub">애드부스트(자동) 효율 부진 → <b>수동 오디언스 리타겟</b>으로 전환. 담고 안 산 사람을 <b>구매완료</b>로 마무리하는 광고.</div>`;
+
+  h+=`<div class="grid g4" style="margin-top:4px">
+    ${kpi("포함 타겟","~"+Math.round(incSum/1000)+"K","장바구니·결제직전·찜","accent")}
+    ${kpi("제외","구매완료","최근 구매자 재노출 차단")}
+    ${kpi("예산",CRE.budget,"전환 수 최대화")}
+    ${kpi("상태",CRE.status,"승인 후 캠페인 ON")}</div>`;
+
+  h+=`<div class="section-t">이 광고를 하는 목적</div>
+   <div class="card"><div style="padding:16px 18px;line-height:1.65;font-size:13.5px;color:var(--ink-2)">
+    <b>신규 유입은 애드부스트쇼핑·쇼핑검색이 담당</b>합니다. 웹사이트 전환광고는 역할이 다릅니다 —
+    <b>이미 관심을 보이고 담아둔 사람(장바구니·결제직전·찜)을 구매완료로 되돌리는 것</b>이 목적입니다.<br>
+    기존엔 이걸 애드부스트(자동)로 돌렸으나 효율이 안 나와 <b>수동 오디언스</b>로 새로 세팅했습니다:
+    고관심 미구매자만 포함하고 <b>구매완료는 제외</b>(이미 산 사람 재노출 낭비 차단), 자동 타겟확장도 꺼
+    순수 리타겟 풀에만 예산을 씁니다. 최적화 목표는 <b>구매완료 전환 수 최대화</b>.
+   </div></div>`;
+
+  h+=`<div class="section-t">광고 미리보기 <span class="tag">현재 집행 소재</span></div>`;
+  const imgArea = CRE.img
+    ? `<img src="${CRE.img}" style="width:100%;display:block" alt="소재">`
+    : `<div style="aspect-ratio:1.91/1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surface-2),var(--accent-soft));color:var(--ink-3);gap:6px;text-align:center;padding:14px">
+         <div style="font-size:32px">🌿</div>
+         <div class="tiny" style="font-weight:800;color:var(--ink);font-size:14px">${esc(CRE.appeal)}</div>
+         <div class="tiny" style="color:var(--ink-2)">${esc(CRE.products)}</div>
+         <div class="tiny" style="opacity:.65">소재 이미지 자리 · 파일 주면 실물 교체</div>
+       </div>`;
+  h+=`<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <div class="card" style="max-width:420px;padding:0;overflow:hidden">
+      ${imgArea}
+      <div style="padding:12px 14px">
+        <div style="display:flex;align-items:center;gap:6px">${pill("good",CRE.appeal)}<span class="tiny" style="color:var(--ink-3)">Sponsored</span></div>
+        <div style="font-weight:800;margin:7px 0 2px;font-size:14px">라이프밀 — 하루 한 끼, 생식으로</div>
+        <div class="tiny" style="color:var(--ink-2)">${esc(CRE.products)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px">
+          <span class="tiny" style="color:var(--ink-3)">${esc(CRE.store)}</span>
+          <span class="pill accent" style="padding:5px 12px;font-weight:800">지금 구매 →</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:240px">
+      <div class="card"><table style="font-size:13px"><tbody>
+        <tr><td class="tiny" style="color:var(--ink-3);width:78px">소구점</td><td><b>${esc(CRE.appeal)}</b></td></tr>
+        <tr><td class="tiny" style="color:var(--ink-3)">제품</td><td>${esc(CRE.products)}</td></tr>
+        <tr><td class="tiny" style="color:var(--ink-3)">랜딩</td><td><a href="${CRE.storeUrl}" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">${esc(CRE.store)}</a></td></tr>
+        <tr><td class="tiny" style="color:var(--ink-3)">행동유도</td><td>지금 구매 → 스토어 대표(각자 담은 상품 이어구매)</td></tr>
+        <tr><td class="tiny" style="color:var(--ink-3)">예산</td><td>${esc(CRE.budget)} · 전환 수 최대화</td></tr>
+      </tbody></table></div>
+      <div class="tiny" style="margin-top:8px;color:var(--ink-3)">※ 위 카드는 집행 소구·제품·랜딩 기준 미리보기입니다. 실제 소재 이미지를 넣으면 실물로 교체됩니다(<code>CRE.img</code>).</div>
+    </div>
+  </div>`;
+
+  h+=`<div class="section-t">타겟 구성 <span class="tag">스토어 타겟 · 최근 90일</span></div>
+    <div class="card"><table><thead><tr><th>구분</th><th>타겟</th><th class="r">모수</th></tr></thead><tbody>`;
+  INC.forEach(([n,v])=>h+=`<tr><td>${pill("good","포함")}</td><td class="name">${esc(n)}</td><td class="r num">${numf(v)}</td></tr>`);
+  EXC.forEach(([n,v])=>h+=`<tr><td>${pill("bad","제외")}</td><td class="name">${esc(n)}</td><td class="r num">${numf(v)}</td></tr>`);
+  h+=`</tbody></table></div><div class="tiny" style="margin-top:6px;color:var(--ink-3)">관심사/구매의도=전체(리타겟 모수 안 좁힘) · 피드 자동 타겟확장 해제(순수 리타겟).</div>`;
+
+  const na=D["naver-ads"];
+  if(na&&na.days){ const dw=curDays(); let cc=0,cr=0,pc=0,pr=0;
+    dw.forEach(d=>(d.groups||[]).forEach(g=>{if(g.channel==="display"){cc+=g.cartConv||0;cr+=g.cartRevenue||0;pc+=g.purchaseConv||0;pr+=g.convRevenue||0}}));
+    if(cr>0){h+=`<div class="section-t">회수 기회 <span class="tag">${rangeLabel()} · 디스플레이 장바구니</span></div><div class="grid g4">
+      ${kpi("장바구니 담김",wonK(cr),numf(cc)+"건","accent")}
+      ${kpi("구매완료",wonK(pr),numf(pc)+"건")}
+      ${kpi("이탈 잠재",wonK(Math.max(0,cr-pr)),"웹전환 회수 대상")}
+      ${kpi("담기→구매",cc?Math.round(pc/cc*100)+"%":"—","낮을수록 회수 여지↑")}</div>
+      <div class="tiny" style="margin-top:6px;color:var(--ink-3)">담고 안 산 매출이 이 광고의 표적입니다.</div>`;}
+  }
+
+  h+=`<div class="section-t">앞으로의 전략</div><div class="card block"><div class="tl">
+    <div class="it"><div class="dt">지금 · Phase 0</div><div class="wt"><span class="cat">가동</span>생식부문 1위 소구로 시작</div><div class="de">1일1생식·데일리 소재 검수 중. 리타겟(장바구니·결제직전·찜 포함, 구매완료 제외)·예산 10만/일. 승인 후 캠페인 ON.</div></div>
+    <div class="it"><div class="dt">첫 3~5일 · Phase 1</div><div class="wt"><span class="cat">학습</span>실결제귀속으로 판독</div><div class="de">플랫폼 표시 ROAS(직유입·커넥트 오염으로 부풀림) 말고 실결제 구매완료로 판단. 소진&lt;예산=소재 CTR 문제 / 소진되는데 전환無=랜딩 이탈, 갈래를 나눠 대응.</div></div>
+    <div class="it"><div class="dt">1~2주 · Phase 2</div><div class="wt"><span class="cat">확장</span>소구·소재 A/B</div><div class="de">"생식부문 1위" 외 2번째 소구(첫구매 혜택·간편함·성분) 테스트. 생식 4종이 매출 86.6%라 생식 우선, 데일리·영양식으로 소재 확대.</div></div>
+    <div class="it"><div class="dt">2~3주 · Phase 3</div><div class="wt"><span class="cat">정교화</span>타겟 레이어</div><div class="de">방문·알림받기 타겟 추가 검토, 구매완료 seed 유사타겟 확장, 관심사 레이어로 모수 보강.</div></div>
+    <div class="it"><div class="dt">상시 · Phase 4</div><div class="wt"><span class="cat">추적</span>전환추적 정합성</div><div class="de">웹사이트 전환추적(전환스크립트) 정합 점검 — 스토어 실결제가 검색광고 리포트에 저평가되는 문제와 연결. 정확한 귀속이 최적화의 전제.</div></div>
+  </div></div>`;
+
+  el.innerHTML=h;
+}
+function renderAll(){renderHome();renderReport();renderPowerlink();renderShopping();renderBranded();renderAdvoost();renderWebconv();renderProducts();renderDict();renderStrategy();renderWeekly();
   const stamps=FEEDS.map(f=>D[f]&&D[f].updatedAt).filter(Boolean).sort();
   const latest=stamps.at(-1);
   document.getElementById("fresh").innerHTML=latest?`데이터 기준 <b>${esc(latest)}</b>`:`<span class="err">데이터 로드 실패</span>`;
